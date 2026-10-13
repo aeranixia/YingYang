@@ -36,3 +36,7 @@
 - 기존 `src/`, 문항·채점·UI·저장 형식과 앱 의존성 파일은 변경하지 않음.
 
 로컬 Firebase 로그인은 확인되지 않았습니다. 서비스 계정과 IAM 권한은 사용자 승인 없이 생성하지 않았습니다. 실제 배포 성공은 인증 설정 후 GitHub Actions 결과로 별도 확인해야 합니다. [Firebase 배포 안내](firebase-deployment.md)에 필요한 역할과 Secret 이름, 첫 실행 방법을 정리했습니다.
+
+## 배포 방식 변경 (2026-10-14)
+
+사용자 요청으로 GitHub Actions 자동 배포를 보류하고 Firebase CLI 사용자 로그인 기반 수동 배포로 전환했습니다. 앞 절의 Actions 및 Secret 안내는 당시 검증 기록이며 현재 배포 절차가 아닙니다. 워크플로는 `docs/firebase-hosting.yml.disabled`로 보관하여 실행을 중지했습니다. `firebase.json`, `.firebaserc`와 앱 코드는 유지했습니다. 현재 절차는 [수동 배포 안내](firebase-deployment.md)를 따릅니다. 사용자의 직접 로그인이 완료되기 전에는 실제 배포를 진행하지 않습니다.

@@ -18,7 +18,7 @@ npm test
 npm run build
 ```
 
-빌드 결과는 `dist/`에 생성됩니다. Firebase Hosting 프로젝트 `yingyangcheck`의 배포 설정과 main 자동 배포 워크플로가 있습니다. 인증 Secret 설정 방법과 첫 배포 절차는 [Firebase 배포 안내](docs/firebase-deployment.md)를 확인하세요. 상대 경로 자산을 사용하며 화면 전환은 앱 내부 상태로 처리하므로 서버의 URL rewrite 설정이 필요 없습니다.
+빌드 결과는 `dist/`에 생성됩니다. Firebase Hosting 프로젝트 `yingyangcheck`에 Firebase CLI로 수동 배포합니다. 자동 배포는 보류했으며 서비스 계정과 GitHub Secret 설정은 필요하지 않습니다. 사용자 로그인과 배포 절차는 [Firebase 배포 안내](docs/firebase-deployment.md)를 확인하세요. 상대 경로 자산을 사용하며 화면 전환은 앱 내부 상태로 처리하므로 서버의 URL rewrite 설정이 필요 없습니다.
 
 ## 구현
 
