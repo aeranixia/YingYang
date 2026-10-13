@@ -25,3 +25,14 @@
 `dist/`를 정적 호스팅에 게시할 수 있는 상태입니다. 서버·환경변수·데이터베이스는 필요하지 않습니다. 배포 플랫폼은 연결하지 않았고 실제 배포도 수행하지 않았습니다. 체질 판정 알고리즘은 추가하지 않았습니다.
 
 실제 iOS/Android 기기, Safari 및 다른 브라우저의 검증은 수행하지 않았습니다. 흐릿한 인접 글자의 정확한 원본 굵기는 고해상도 스캔에서 최종 확인할 여지가 있습니다.
+
+## Firebase Hosting 설정 검증 (2026-10-14)
+
+- `npm ci` 완료, 앱 의존성 취약점 0개 보고.
+- `npm test`: 21개 통과. `npm run build`: 성공.
+- `firebase.json`, `.firebaserc`: Firebase CLI 저장소의 공식 JSON 스키마와 ajv-cli로 검증.
+- 프로젝트 및 사이트 ID `yingyangcheck`, 공개 디렉터리 `dist`, 빌드된 `dist/index.html`, 캐시 헤더와 Hosting 전용 구성을 확인.
+- GitHub Actions 워크플로: actionlint로 문법·표현식·Action 입력 검사 통과. 배포 단계는 설치·테스트·빌드와 인증 검사를 모두 통과해야 실행.
+- 기존 `src/`, 문항·채점·UI·저장 형식과 앱 의존성 파일은 변경하지 않음.
+
+로컬 Firebase 로그인은 확인되지 않았습니다. 서비스 계정과 IAM 권한은 사용자 승인 없이 생성하지 않았습니다. 실제 배포 성공은 인증 설정 후 GitHub Actions 결과로 별도 확인해야 합니다. [Firebase 배포 안내](firebase-deployment.md)에 필요한 역할과 Secret 이름, 첫 실행 방법을 정리했습니다.

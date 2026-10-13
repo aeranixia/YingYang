@@ -18,7 +18,7 @@ npm test
 npm run build
 ```
 
-빌드 결과는 `dist/`에 생성됩니다. 정적 호스팅이 가능한 구조이며 배포 플랫폼 연결은 하지 않았습니다. 상대 경로 자산을 사용하며 화면 전환은 앱 내부 상태로 처리하므로 서버의 URL rewrite 설정이 필요 없습니다.
+빌드 결과는 `dist/`에 생성됩니다. Firebase Hosting 프로젝트 `yingyangcheck`의 배포 설정과 main 자동 배포 워크플로가 있습니다. 인증 Secret 설정 방법과 첫 배포 절차는 [Firebase 배포 안내](docs/firebase-deployment.md)를 확인하세요. 상대 경로 자산을 사용하며 화면 전환은 앱 내부 상태로 처리하므로 서버의 URL rewrite 설정이 필요 없습니다.
 
 ## 구현
 
