@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { aggregate, answer, fresh, isComplete, key, next, restore, save } from './engine'
-import { classification, questions } from './questions'
+import { classification, questions, type Segment } from './questions'
 describe('문항과 집계', () => {
+ it('재검수한 강조 범위와 원문 유지', () => {
+  const bold = (content: Segment[]) => content.filter(s => s.bold).map(s => s.text)
+  expect(questions.acquired.every(q => q.content.every(s => s.bold))).toBe(true)
+  expect(bold(questions.acquired[5].options[3].content)).toEqual(['내가 어떤 사람인지', '잘 모른다는 생각이 든다.'])
+  expect(bold(questions.acquired[7].options[3].content)).toEqual(['장기적으로 꿈을 이루려고', '타인을 도우면서'])
+  expect(bold(questions.acquired[9].options[3].content)[0]).toBe('멜로디')
+  expect(bold(questions.innate[0].content)).toEqual(['달리기를 좋아하는'])
+  expect(questions.innate[0].content.map(s=>s.text).join('')).toBe('오래 달리기를 해 본 경험이 많고, 달리기를 좋아하는 편이다.')
+ })
  it('10문항과 40문항, 분류 중복 및 누락 없음', () => {
   expect(questions.acquired).toHaveLength(10); expect(questions.innate).toHaveLength(40)
   const ids = Object.values(classification).flat()

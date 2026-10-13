@@ -36,6 +36,8 @@ it('후천적 10문항 완료 후 합계 10회', () => {
  render(<App/>); fireEvent.click(screen.getAllByText('시작하기')[0])
  for(let i=0;i<10;i++){fireEvent.click(screen.getAllByRole('radio')[1]);fireEvent.click(screen.getByRole('button',{name:i===9?'결과 확인':'다음 →'}))}
  expect(screen.getAllByText('10회')).toHaveLength(2)
- fireEvent.click(screen.getByText('다시 검진하기')); expect(screen.getByRole('button',{name:'취소'})).toBe(document.activeElement)
+ const resetButton = screen.getByRole('button',{name:'다시 검진하기'})
+ resetButton.focus(); fireEvent.click(resetButton); expect(screen.getByRole('button',{name:'취소'})).toBe(document.activeElement)
  fireEvent.keyDown(document,{key:'Escape'}); expect(screen.queryByRole('alertdialog')).toBeNull()
+ expect(document.activeElement).toBe(resetButton)
 })

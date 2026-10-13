@@ -35,7 +35,7 @@ const acquiredSource: [string, string[]][] = [
  '오늘을 즐기기 위해서 일과를 빨리 끝내고 친한 사람들과 **잘 어울려서 재미있어 한다.**',
  '나는 항상 남들이 인정하는 분야에서 **최고가 되기 위해서** 늘 열심히 **전진하며** 산다.',
  '매사에 너무 **완벽함과** 철저함에 시달려서 내 자신을 힘들게 하지만 **이런 내가 좋다.**',
- '마음은 넓은 것 같으나 **내가 어떤 사람인지 생각하면 할수록 잘 모른다는 생각이 든다.**']],
+ '마음은 넓은 것 같으나 **내가 어떤 사람인지** 생각하면 할수록 **잘 모른다는 생각이 든다.**']],
  ['내가 느끼는 단점은?', [
  '매사에 너무 호기심이 많아서 정신이 없으며 **즐겁고 재미있는 것만 너무 좋아한다.**',
  '나와 타인을 비교해 보면 타인이 **너무 느리고 답답하다는 우월적인** 생각이 든다.',
@@ -45,7 +45,7 @@ const acquiredSource: [string, string[]][] = [
  '**기발한 아이디어가** 많으며 **재치가 유머가** 넘쳐서 늘 분위기를 활기차게 만든다.',
  '문제가 생기면 바로 해결하는 편이라서 쓸데없는 **시간낭비 없이 빠르게 살아간다.**',
  '원칙은 반드시 지켜야 된다고 생각하며 **도덕적이고 윤리적인 점이** 장점이다.',
- '**장기적으로 꿈을 이루려고 노력하며 타인을 도우면서** 내가 성공하는 것이 중요하다.']],
+ '**장기적으로 꿈을 이루려고** 노력하며 **타인을 도우면서** 내가 성공하는 것이 중요하다.']],
  ['내 인생의 또 하나의 단점은?', [
  '말이 **너무 앞서고 일을 너무 크게 벌려서** 후에 난처한 상황이 생기는 경우가 많다.',
  '자신감과 실행력이 넘쳐서 현재의 **문제를 빠르게 잘 해결한다.** 그러나 **뒤에 후회한다.**',
@@ -55,7 +55,7 @@ const acquiredSource: [string, string[]][] = [
  '**빠르고 경쾌하며** 몸을 **흔들면서 춤추며** 즐겁게 부를 수 있는 **신나는 노래를** 선호한다.',
  '강한 음악을 좋아하고 **소리를 크게 지르며** 강하게 분출하여 스트레스가 풀리는 노래.',
  '조용하고 잔잔하며 **가사에 깊은 의미가** 있는 음정도 애절하고 과거를 **회상하는 노래.**',
- '**멜로디(음정)가** 좋은 노래가 먼저 확 끌리며 **기분에 따라 노래스타일이 자꾸 바뀐다.**']],
+ '**멜로디**(음정)가 좋은 노래가 먼저 확 끌리며 **기분에 따라 노래스타일이 자꾸 바뀐다.**']],
 ]
 export const classification: Record<Group, number[]> = {
  '가': [1, 2, 6, 9, 14, 20, 22, 28, 29, 33, 40],
@@ -64,7 +64,7 @@ export const classification: Record<Group, number[]> = {
  '라': [3, 5, 12, 16, 17, 23, 25, 32, 38],
 }
 const innateSource = [
- '오래 달리기를 해 본 경험이 많고, **달리기를 좋아하는 편이다.**',
+ '오래 달리기를 해 본 경험이 많고, **달리기를 좋아하는** 편이다.',
  '**더위를 많이 타는 편**이라서 더운 **여름이 너무 힘들다.**',
  '땀 흘리고 나면 상쾌해져서 **찜질방이나 사우나를** 즐기는 편이다.',
  '추위를 아주 많이 타서 **추운 겨울이 너무 힘들다.**',
@@ -106,6 +106,6 @@ const innateSource = [
  '여름에 에어컨은 필수품이며 **일년 내내 감기에 잘 걸리지 않는다.**',
 ]
 export const questions: Record<Kind, Question[]> = {
- acquired: acquiredSource.map(([q, options], i) => ({ id: i + 1, content: segments(q), options: options.map((text, j) => ({ value: j + 1, content: segments(text) })) })),
+ acquired: acquiredSource.map(([q, options], i) => ({ id: i + 1, content: [{ text: q, bold: true }], options: options.map((text, j) => ({ value: j + 1, content: segments(text) })) })),
  innate: innateSource.map((text, i) => ({ id: i + 1, content: segments(text), group: (Object.keys(classification) as Group[]).find(g => classification[g].includes(i + 1))!, options: [{value: 2, content: segments('95% 이상 확실')}, {value: 1, content: segments('80% 이상 맞음')}, {value: 0, content: segments('80% 미만')}] })),
 }
