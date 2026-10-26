@@ -7,7 +7,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -b && vite build",
     "test": "vitest run && node --test scripts/staging-policy.test.mjs",
-    "build:staging": "tsc -b && vite build --mode staging",
+    "build:staging": "tsc -b && vite build --mode staging && node scripts/staging-preview.mjs",
     "functions:build": "npm --prefix functions run build",
     "functions:test": "npm --prefix functions test",
     "deploy:staging": "node scripts/deploy-staging.mjs",
