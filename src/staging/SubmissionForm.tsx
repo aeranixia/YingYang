@@ -1,8 +1,17 @@
-import { useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { Session } from '../engine'
 import { consentVersion, syntheticNames, syntheticPhones, type MockReceipt, type Submission, type MockScenario } from './contracts'
+import { completionProof, confirmPending } from './completion'
 
-export function SubmissionForm({ states, send }: { states: { acquired: Session; innate: Session }; send: (input: Submission) => Promise<MockReceipt> }) {
+export function SubmissionForm({ states, send, confirm }: { states: { acquired: Session; innate: Session }; send: (input: Submission) => Promise<MockReceipt>; confirm?: Parameters<typeof confirmPending>[1] }) {
+ const [completionStatus, setCompletionStatus] = useState('')
+ async function checkCompletion() {
+  if (!confirm) return
+  setCompletionStatus('완료 시각을 서버에서 확인 중입니다.')
+  try { await confirmPending(states, confirm); setCompletionStatus(completionProof(states) ? '서버 완료 확인 시각을 기록했습니다. PDF에는 한국 시간으로 표시합니다.' : '이전 검진에는 완료 시각 기록이 없습니다. PDF에 기록 없음으로 표시합니다.') }
+  catch { setCompletionStatus('완료 시각 확인에 실패했습니다. 다시 확인해 주세요. 재연결 시 서버가 확인한 시각을 기록합니다.') }
+ }
+ useEffect(() => { void checkCompletion() }, [states.acquired, states.innate])
  const [name, setName] = useState(''), [phone, setPhone] = useState('')
  const [personal, setPersonal] = useState(false), [sensitive, setSensitive] = useState(false), [synthetic, setSynthetic] = useState(false)
  const [scenario, setScenario] = useState<MockScenario>('success')
@@ -14,7 +23,9 @@ export function SubmissionForm({ states, send }: { states: { acquired: Session; 
   if (locked.current || status === 'success' || !valid) return
   locked.current = true; setStatus('sending'); setMessage('PDF 생성과 모의 처리를 진행 중입니다. 실제 이메일은 발송하지 않습니다.')
   try {
-   const data = { version: states.acquired.version, name: name.trim(), phone: phone.replaceAll('-', ''), acquired: states.acquired.answers as number[], innate: states.innate.answers as number[], consent: { personal, sensitive, synthetic, version: consentVersion }, scenario }
+   if (confirm) await confirmPending(states, confirm)
+   const proof = completionProof(states)
+   const data = { ...(proof ? { completionProof: proof } : {}), version: states.acquired.version, name: name.trim(), phone: phone.replaceAll('-', ''), acquired: states.acquired.answers as number[], innate: states.innate.answers as number[], consent: { personal, sensitive, synthetic, version: consentVersion }, scenario }
    const signature = JSON.stringify(data)
    if (request.current.signature !== signature) request.current = { id: crypto.randomUUID(), signature }
    const result = await send({ ...data, requestId: request.current.id })
@@ -26,6 +37,7 @@ export function SubmissionForm({ states, send }: { states: { acquired: Session; 
   } finally { locked.current = false }
  }
  return <section className="panel submission-panel"><aside className="notice"><strong>STAGING · 임시 동의 문구 · 실제 개인정보 입력 금지</strong><p>아래 문구는 기능 검증용 초안으로 운영에 사용할 수 없습니다. 실제 처리방침·동의와 한의원 책임자의 승인은 별도입니다.</p></aside>
+ {completionStatus && <aside className="notice"><p role="status">{completionStatus}</p><p>표시 시각은 실제 클릭·PDF 생성·이메일 발송 시각이 아닌 서버 완료 확인 시각입니다.</p><button type="button" className="secondary" disabled={status === 'sending'} onClick={() => void checkCompletion()}>완료 시각 다시 확인</button></aside>}
  <form onSubmit={submit} aria-label="모의 결과 전송" aria-busy={status === 'sending'}>
  <fieldset disabled={status === 'sending' || status === 'success'}><legend>가상 정보 입력</legend>
  <label htmlFor="test-name">이름</label><input id="test-name" autoComplete="off" maxLength={30} required value={name} onChange={e => setName(e.target.value)} aria-describedby="test-name-hint"/><p id="test-name-hint">허용된 가상 이름: {syntheticNames.join(', ')}</p>

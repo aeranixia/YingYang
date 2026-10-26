@@ -4,6 +4,7 @@ import App from '../App'
 import { fresh, key, type Session } from '../engine'
 import { SubmissionForm } from './SubmissionForm'
 import type { Submission } from './contracts'
+import { completionKey, markCompletion } from './completion'
 beforeEach(() => { localStorage.clear(); vi.spyOn(window, 'scrollTo').mockImplementation(() => {}) })
 afterEach(() => { cleanup(); vi.restoreAllMocks() })
 const state = (kind: 'acquired' | 'innate'): Session => ({ ...fresh(kind), completed: true, answers: Array(kind === 'acquired' ? 10 : 40).fill(kind === 'acquired' ? 2 : 1) })
@@ -71,4 +72,24 @@ it('recovers form controls when request ID creation fails before network transmi
  expect(send).not.toHaveBeenCalled()
  expect(screen.getByLabelText('이름').matches(':disabled')).toBe(false)
  expect(screen.getByRole('form').getAttribute('aria-busy')).toBe('false')
+})
+
+it('final exam completion requests server confirmation and retaking clears it without changing other exam', async () => {
+ const data=states();data.innate.completed=false;data.innate.current=39
+ for(const kind of ['acquired','innate'] as const)localStorage.setItem(key(kind),JSON.stringify(data[kind]))
+ const confirm=vi.fn(async()=>({proof:'test-server-proof'})),send=vi.fn(async(input:Submission)=>({status:'mock-completed' as const,requestId:input.requestId,duplicate:false}))
+ const changed=vi.fn(markCompletion)
+ render(<App onSessionsChange={changed} submission={s=><SubmissionForm states={s} send={send} confirm={confirm}/>}/>)
+ fireEvent.click(screen.getByRole('button',{name:'이어하기'}))
+ fireEvent.click(screen.getByRole('button',{name:'검진 완료'}))
+ await waitFor(()=>expect(confirm).toHaveBeenCalledTimes(1))
+ expect(changed.mock.calls.at(-1)?.[1]).toBe(true)
+ enter();fireEvent.click(screen.getByRole('button',{name:'검사 결과 보내기 (모의)'}))
+ await waitFor(()=>expect(send).toHaveBeenCalledTimes(1))
+ expect(send.mock.calls[0][0].completionProof).toBe('test-server-proof')
+ fireEvent.click(screen.getByRole('button',{name:'← 홈으로'}))
+ fireEvent.click(screen.getAllByRole('button',{name:'완료 및 응답 보기'})[1])
+ fireEvent.click(screen.getByRole('button',{name:'다시 검진하기'}));fireEvent.click(screen.getByRole('button',{name:'확인'}))
+ expect(localStorage.getItem(completionKey)).toBeNull()
+ expect(JSON.parse(localStorage.getItem(key('acquired'))!).completed).toBe(true)
 })

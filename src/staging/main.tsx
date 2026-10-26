@@ -9,6 +9,7 @@ import App from '../App'
 import { SubmissionForm } from './SubmissionForm'
 import type { Submission, MockReceipt } from './contracts'
 import { loginErrorMessage } from './login'
+import { markCompletion, confirmPending } from './completion'
 import '../style.css'
 import './staging.css'
 import './exam.css'
@@ -20,6 +21,7 @@ initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider(config.recap
 const checkStatus = httpsCallable<Record<string, never>, { phase: string; projectId: string; mailMode: string; secretReady: boolean }>(getFunctions(app, 'asia-northeast3'), 'stagingStatus')
 const submitReport = httpsCallable<Submission, MockReceipt>(getFunctions(app, 'asia-northeast3'), 'submitMockReport')
 const sendReport = async (input: Submission) => (await submitReport(input)).data
+const confirmReport = async (input: Parameters<Parameters<typeof confirmPending>[1]>[0]) => (await httpsCallable<typeof input, { proof: string }>(getFunctions(app, 'asia-northeast3'), 'stagingStatus')(input)).data
 
 function Staging() {
  const [user, setUser] = useState<User | null>(null)
@@ -41,7 +43,7 @@ function Staging() {
   } catch { setNotice('환경 확인을 통과하지 못했습니다. 계정 권한과 브라우저의 보안 검증 설정을 확인한 뒤 다시 시도해 주세요.') }
   finally { setBusy(false) }
  }
- if (user && ready) return <><div className="staging-ribbon">STAGING · B·C단계 · 지정된 가상 정보와 응답만 사용 · 실제 이메일 발송 없음<button onClick={() => { void signOut(auth); setPassword('') }}>테스트 로그아웃</button></div><App submission={states => <SubmissionForm states={states} send={sendReport}/>}/></>
+ if (user && ready) return <><div className="staging-ribbon">STAGING · B·C단계 · 지정된 가상 정보와 응답만 사용 · 실제 이메일 발송 없음<button onClick={() => { void signOut(auth); setPassword('') }}>테스트 로그아웃</button></div><App onSessionsChange={(states, completed) => { markCompletion(states, completed); void confirmPending(states, confirmReport).catch(() => {}) }} submission={states => <SubmissionForm states={states} send={sendReport} confirm={confirmReport}/>}/></>
  return <div className="stage-shell"><header><strong>YingYang</strong><span className="stage-badge">STAGING · v1.2 개발 · B·C단계</span></header><main>
   <h1>접근이 제한된 테스트 환경</h1><p>가상 정보만 사용하세요. 운영 사이트와 연결되지 않습니다.</p>
   <aside>두 검진 완료 후 지정된 가상 이름·전화번호로 PDF 생성과 모의 처리를 테스트합니다. 실제 개인정보 입력과 실제 이메일 발송은 금지됩니다. 동의 문구는 임시 초안입니다.</aside>

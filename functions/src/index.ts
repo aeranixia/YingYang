@@ -7,6 +7,7 @@ import { mockSender } from './sender'
 import { GcsStateStore } from './mail-state'
 import { readMailSecret, validateMailConfig, refreshGmailToken, dispatchGmail } from './gmail-sender'
 import { prepareMailTicket, createLiveService, LiveError } from './live-service'
+import { confirmCompletion } from './completion'
 
 const signingKey = defineSecret('STAGING_REQUEST_SIGNING_KEY')
 const allowLocalRequest = createLocalLimiter()
@@ -22,7 +23,14 @@ export const stagingStatus = onCall(callableOptions, request => {
  if (!request.auth) throw new HttpsError('unauthenticated', '테스트 계정 로그인이 필요합니다.')
  if (!allowedStage(process.env.GCLOUD_PROJECT, request.auth.token.stagingTester)) throw new HttpsError('permission-denied', '승인된 Staging 계정만 접근할 수 있습니다.')
  if (!request.app) throw new HttpsError('failed-precondition', 'App Check 확인이 필요합니다.')
- if (!isEmptyStatusInput(request.data)) throw new HttpsError('invalid-argument', '이 환경 확인에는 빈 객체만 허용됩니다.')
+ if (!isEmptyStatusInput(request.data)) {
+  if (process.env.STAGING_ENV !== 'stage-bc' || request.rawRequest.rawBody?.length > 4096) throw new HttpsError('invalid-argument', '완료 확인 요청을 확인해 주세요.')
+  if (!allowLocalRequest(Date.now())) throw new HttpsError('resource-exhausted', '잠시 후 다시 확인해 주세요.')
+  const key = signingKey.value()
+  if (key.length < 32) throw new HttpsError('failed-precondition', '서버 설정을 확인해 주세요.')
+  try { return confirmCompletion(request.data, request.auth.uid, key) }
+  catch { throw new HttpsError('invalid-argument', '완료된 검진 응답을 확인해 주세요.') }
+ }
  if (!allowLocalRequest(Date.now())) throw new HttpsError('resource-exhausted', '잠시 후 다시 확인해 주세요.')
  return { phase: 'BC', projectId: 'yingyangtest', mailMode: 'mock', secretReady: signingKey.value().length >= 32 }
 })

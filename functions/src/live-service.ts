@@ -2,6 +2,7 @@ import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto'
 import type { Submission } from '../../src/staging/contracts'
 import { validateSubmission, attachmentName } from './submission'
 import { createPdf } from './pdf'
+import { completionDate } from './completion'
 import { Conflict, type StateStore } from './mail-state'
 import type { MailConfig } from './gmail-sender'
 import type { Attachment } from './sender'
@@ -10,12 +11,13 @@ export class LiveError extends Error {
  constructor(public readonly code: 'invalid-argument' | 'already-exists' | 'aborted' | 'resource-exhausted' | 'failed-precondition' | 'unavailable', public readonly outcomeUnknown = false) { super(code) }
 }
 const digest = (value: string, key: string) => createHmac('sha256', key).update(value).digest('hex')
-const canonical = (input: Submission) => JSON.stringify([input.requestId,input.version,input.name,input.phone,input.acquired,input.innate,[input.consent.personal,input.consent.sensitive,input.consent.synthetic,input.consent.version],input.scenario])
+const canonical = (input: Submission) => JSON.stringify([input.requestId,input.version,input.name,input.phone,input.acquired,input.innate,[input.consent.personal,input.consent.sensitive,input.consent.synthetic,input.consent.version],input.scenario,input.completionProof ?? null])
 type Ticket = { operation: string; requestId: string; scope: string; expires: number }
 type RecordState = { digest: string; state: 'preparing' | 'failed' | 'sending' | 'sent' | 'unknown'; attempts: number; leaseUntil: number; expires: number }
 function scope(input: Submission, uid: string, config: MailConfig, key: string) { return digest(JSON.stringify([canonical(input),uid,config.sender,config.recipient]), key) }
 export function prepareMailTicket(raw: unknown, uid: string, config: MailConfig, key: string, now = Date.now()) {
  const input = validateSubmission(raw,'staging-e-draft-1')
+ completionDate(input, uid, key, now)
  if (input.scenario !== 'success') throw new LiveError('invalid-argument')
  const payload: Ticket = { operation: randomUUID(), requestId: input.requestId, scope: scope(input,uid,config,key), expires: now + 15 * 60000 }
  const encoded = Buffer.from(JSON.stringify(payload)).toString('base64url')
@@ -32,7 +34,7 @@ function verifyTicket(ticket: unknown, input: Submission, uid: string, config: M
   return parsed
  } catch { throw new LiveError('invalid-argument') }
 }
-export function createLiveService(store: StateStore, dispatch: (config: MailConfig, attachment: Attachment, operation: string, accessToken: string) => Promise<void>, authorize: (config: MailConfig) => Promise<string>, clock = Date.now, pdf = (input: Submission, date: Date) => createPdf(input,date,'gmail-test')) {
+export function createLiveService(store: StateStore, dispatch: (config: MailConfig, attachment: Attachment, operation: string, accessToken: string) => Promise<void>, authorize: (config: MailConfig) => Promise<string>, clock = Date.now, pdf = (input: Submission, date: Date | null) => createPdf(input,date,'gmail-test')) {
  async function quota(now: number) {
   const date = new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(now)
   const name = `v1/days/${date}`
@@ -47,6 +49,7 @@ export function createLiveService(store: StateStore, dispatch: (config: MailConf
  return async (raw: unknown, uid: string, config: MailConfig, key: string) => {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw) || Object.keys(raw).sort().join(',') !== 'submission,ticket') throw new LiveError('invalid-argument')
   const request = raw as { submission: unknown; ticket: unknown }, input = validateSubmission(request.submission,'staging-e-draft-1'), now = clock()
+  const completedAt = completionDate(input, uid, key, now)
   if (input.scenario !== 'success') throw new LiveError('invalid-argument')
   const ticket = verifyTicket(request.ticket,input,uid,config,key,now), name = `v1/operations/${ticket.operation}`
   const prior = await store.read<RecordState>(name)
@@ -61,7 +64,7 @@ export function createLiveService(store: StateStore, dispatch: (config: MailConf
   try { generation=await store.write(name,record,prior?.generation||'0') } catch(error) { if(error instanceof Conflict) throw new LiveError('aborted'); throw new LiveError('unavailable') }
   let buffer: Buffer | undefined, sending=false
   try {
-   buffer = await pdf(input,new Date(now))
+   buffer = await pdf(input,completedAt)
    const accessToken = await authorize(config)
    await quota(now)
    record={...record,state:'sending'}

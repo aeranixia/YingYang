@@ -13,7 +13,7 @@ function Result({ state }: { state: Session }) {
 function CompletedResult({ state }: { state: Session }) {
  return <details className="completed-result"><summary>{state.kind === 'acquired' ? '후천적' : '타고난'} 체질 결과 보기</summary><div className="panel"><Result state={state}/></div></details>
 }
-export default function App({ submission }: { submission?: (states: Record<Kind, Session>) => ReactNode } = {}) {
+export default function App({ submission, onSessionsChange }: { submission?: (states: Record<Kind, Session>) => ReactNode; onSessionsChange?: (states: Record<Kind, Session>, newlyCompleted: boolean) => void } = {}) {
  const [states, setStates] = useState<Record<Kind, Session>>(() => ({ acquired: read('acquired'), innate: read('innate') }))
  const [view, setView] = useState<View>('home'), [warning, setWarning] = useState('')
  const [review, setReview] = useState(false), [reset, setReset] = useState<Kind | null>(null)
@@ -42,6 +42,8 @@ export default function App({ submission }: { submission?: (states: Record<Kind,
   return () => { document.removeEventListener('keydown', handleKey); previous?.focus() }
  }, [reset])
  function update(state: Session) {
+  try { onSessionsChange?.({ ...states, [state.kind]: state }, !states[state.kind].completed && state.completed) }
+  catch { setWarning('완료 확인 기록을 저장하지 못했습니다. 검진 응답은 유지됩니다.') }
   try { save(localStorage, state); setWarning('') } catch { setWarning('자동 저장을 사용할 수 없습니다. 브라우저 저장 공간 설정을 확인해 주세요. 페이지를 닫으면 응답이 사라질 수 있습니다.') }
   setStates(prev => ({ ...prev, [state.kind]: state }))
   if (submission && state.completed && states[state.kind === 'acquired' ? 'innate' : 'acquired'].completed) { setView('combined'); setReview(false) }

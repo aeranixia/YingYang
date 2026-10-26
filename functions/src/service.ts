@@ -1,5 +1,6 @@
 import { attachmentName, fingerprint, validateSubmission } from './submission'
 import { createPdf } from './pdf'
+import { completionDate } from './completion'
 import type { Sender } from './sender'
 import type { MockReceipt } from '../../src/staging/contracts'
 
@@ -12,6 +13,7 @@ export function createSubmissionService(sender: Sender, clock = Date.now, pdf = 
  let day = -1, count = 0
  return async (raw: unknown, uid: string, signingKey: string): Promise<MockReceipt> => {
   const input = validateSubmission(raw), now = clock()
+  const completedAt = completionDate(input, uid, signingKey, now)
   for (const [id, entry] of entries) if (entry.expiry <= now) entries.delete(id)
   const id = `${uid}:${input.requestId}`, digest = fingerprint(input, signingKey)
   let entry = entries.get(id)
@@ -29,7 +31,7 @@ export function createSubmissionService(sender: Sender, clock = Date.now, pdf = 
   entry.state = 'processing'; entry.attempts++
   let buffer: Buffer | undefined
   try {
-   buffer = await pdf(input, new Date(now))
+   buffer = await pdf(input, completedAt)
    await sender.send({ filename: attachmentName(input), content: buffer }, { fail: input.scenario === 'fail-once' && entry.attempts === 1 })
    entry.state = 'completed'
    return { status: 'mock-completed', requestId: input.requestId, duplicate: false }
