@@ -15,6 +15,6 @@
     "source": "functions",
     "codebase": "yingyang-staging",
     "runtime": "nodejs22",
-    "ignore": ["node_modules", ".git", "*-debug.log", "*.test.*", "src"]
+    "ignore": ["node_modules", ".git", "*-debug.log", "*.test.*", "test"]
   }]
 }

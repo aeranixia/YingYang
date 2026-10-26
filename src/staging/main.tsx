@@ -5,13 +5,20 @@ import { initializeAuth, inMemoryPersistence, onAuthStateChanged, signInWithEmai
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check'
 import { getFunctions, httpsCallable } from 'firebase/functions'
 import config from './public-config'
+import App from '../App'
+import { SubmissionForm } from './SubmissionForm'
+import type { Submission, MockReceipt } from './contracts'
+import '../style.css'
 import './staging.css'
+import './exam.css'
 
 if (config.projectId !== 'yingyangtest') throw new Error('Staging 프로젝트 설정이 아닙니다.')
 const app = initializeApp(config)
 const auth = initializeAuth(app, { persistence: inMemoryPersistence })
 initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider(config.recaptchaSiteKey), isTokenAutoRefreshEnabled: true })
 const checkStatus = httpsCallable<Record<string, never>, { phase: string; projectId: string; mailMode: string; secretReady: boolean }>(getFunctions(app, 'asia-northeast3'), 'stagingStatus')
+const submitReport = httpsCallable<Submission, MockReceipt>(getFunctions(app, 'asia-northeast3'), 'submitMockReport')
+const sendReport = async (input: Submission) => (await submitReport(input)).data
 
 function Staging() {
  const [user, setUser] = useState<User | null>(null)
@@ -28,17 +35,18 @@ function Staging() {
   setBusy(true); setNotice(''); setReady(false)
   try {
    const { data } = await checkStatus({})
-   if (data.phase !== 'A' || data.projectId !== 'yingyangtest' || data.mailMode !== 'disabled' || !data.secretReady) throw new Error('Invalid environment')
+   if (data.phase !== 'BC' || data.projectId !== 'yingyangtest' || data.mailMode !== 'mock' || !data.secretReady) throw new Error('Invalid environment')
    setReady(true); setNotice('테스트 계정 권한·App Check·서버 비밀 설정 확인을 통과했습니다.')
   } catch { setNotice('환경 확인을 통과하지 못했습니다. 계정 권한과 브라우저의 보안 검증 설정을 확인한 뒤 다시 시도해 주세요.') }
   finally { setBusy(false) }
  }
- return <div className="stage-shell"><header><strong>YingYang</strong><span className="stage-badge">STAGING · v1.2 개발 · A단계</span></header><main>
+ if (user && ready) return <><div className="staging-ribbon">STAGING · B·C단계 · 지정된 가상 정보와 응답만 사용 · 실제 이메일 발송 없음<button onClick={() => { void signOut(auth); setPassword('') }}>테스트 로그아웃</button></div><App submission={states => <SubmissionForm states={states} send={sendReport}/>}/></>
+ return <div className="stage-shell"><header><strong>YingYang</strong><span className="stage-badge">STAGING · v1.2 개발 · B·C단계</span></header><main>
   <h1>접근이 제한된 테스트 환경</h1><p>가상 정보만 사용하세요. 운영 사이트와 연결되지 않습니다.</p>
-  <aside>현재는 환경 구축 단계입니다. 검진 변경, PDF 생성, 이메일 전송 기능은 아직 제공하지 않습니다. 실제 개인정보를 입력하지 마세요.</aside>
-  {!user ? <form onSubmit={login}><h2>테스트 계정 로그인</h2><label>테스트 계정 이메일<input type="email" autoComplete="username" required value={email} onChange={e => setEmail(e.target.value)} /></label><label>비밀번호<input type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} /></label><button disabled={busy}>{busy ? '로그인 중…' : '로그인'}</button></form> : <section><h2>Staging 환경 확인</h2><p>프로젝트: <strong>yingyangtest</strong></p><p>메일 발송: <strong>차단됨</strong></p><p>검진·PDF·모의 이메일 구현은 다음 단계 승인 후 진행합니다.</p><button disabled={busy} onClick={verify}>{busy ? '확인 중…' : '테스트 접근 권한과 서버 확인'}</button>{ready && <p className="stage-ok">✓ A단계 서버 접근 확인 완료</p>}<button className="stage-secondary" disabled={busy} onClick={() => { void signOut(auth); setPassword('') }}>로그아웃</button></section>}
+  <aside>두 검진 완료 후 지정된 가상 이름·전화번호로 PDF 생성과 모의 처리를 테스트합니다. 실제 개인정보 입력과 실제 이메일 발송은 금지됩니다. 동의 문구는 임시 초안입니다.</aside>
+  {!user ? <form onSubmit={login}><h2>테스트 계정 로그인</h2><label>테스트 계정 이메일<input type="email" autoComplete="username" required value={email} onChange={e => setEmail(e.target.value)} /></label><label>비밀번호<input type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} /></label><button disabled={busy}>{busy ? '로그인 중…' : '로그인'}</button></form> : <section><h2>Staging 환경 확인</h2><p>프로젝트: <strong>yingyangtest</strong></p><p>메일 발송: <strong>차단됨</strong></p><p>권한 확인 후 Staging 검진과 모의 전송 화면을 엽니다. 실제 이메일은 발송하지 않습니다.</p><button disabled={busy} onClick={verify}>{busy ? '확인 중…' : '테스트 접근 권한과 서버 확인'}</button>{ready && <p className="stage-ok">✓ A단계 서버 접근 확인 완료</p>}<button className="stage-secondary" disabled={busy} onClick={() => { void signOut(auth); setPassword('') }}>로그아웃</button></section>}
   {notice && <p role="status" className="stage-notice">{notice}</p>}
-  <footer>로그인 상태는 새로고침하면 해제됩니다. 이름·전화번호·검진 응답 입력란이 없는 A단계 전용 화면입니다.</footer>
+  <footer>로그인 상태는 새로고침하면 해제됩니다. 검진 응답과 글자 크기만 이 브라우저에 저장하며, 이름·전화번호·동의는 저장하지 않습니다.</footer>
  </main></div>
 }
 createRoot(document.getElementById('root')!).render(<Staging />)

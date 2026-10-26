@@ -1,3 +1,3 @@
-const {test}=require('node:test');const assert=require('node:assert/strict');const {allowedStage}=require('../lib/policy');
+const {test}=require('node:test');const assert=require('node:assert/strict');const {allowedStage}=require('../lib/functions/src/policy');
 test('staging tester only',()=>{assert.equal(allowedStage('yingyangtest',true),true);for(const project of ['yingyangcheck','other',undefined])assert.equal(allowedStage(project,true),false);for(const tester of [false,undefined,'true',1])assert.equal(allowedStage('yingyangtest',tester),false)});
-test('best effort per-process limit resets after one minute',()=>{const {createLocalLimiter}=require('../lib/policy');const limit=createLocalLimiter();for(let i=0;i<5;i++)assert.equal(limit(100000),true);assert.equal(limit(100000),false);assert.equal(limit(160001),true)});
+test('best effort per-process limit resets after one minute',()=>{const {createLocalLimiter}=require('../lib/functions/src/policy');const limit=createLocalLimiter();for(let i=0;i<5;i++)assert.equal(limit(100000),true);assert.equal(limit(100000),false);assert.equal(limit(160001),true)});

@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 
 export const stagingProject = 'yingyangtest'
-export function validateStaging({ project, config, aliases, html, publicConfig }) {
+export function validateStaging({ project, config, aliases, html, publicConfig, serverEnv }) {
  if (project !== stagingProject) throw new Error('Staging 배포는 yingyangtest에만 허용됩니다.')
  if (aliases.projects?.default) throw new Error('기본 배포 프로젝트를 지정할 수 없습니다.')
  if (aliases.projects?.staging !== stagingProject || aliases.projects?.production !== 'yingyangcheck') throw new Error('환경 별칭이 일치하지 않습니다.')
@@ -11,9 +11,11 @@ export function validateStaging({ project, config, aliases, html, publicConfig }
  if (!publicConfig.includes('"projectId": "yingyangtest"') || publicConfig.includes('yingyangcheck')) throw new Error('브라우저 프로젝트가 Staging이 아닙니다.')
  const headers = config.hosting.headers?.flatMap(rule => rule.headers || []) || []
  if (!headers.some(header => header.key === 'X-Robots-Tag' && header.value.includes('noindex'))) throw new Error('검색 색인 차단 설정이 필요합니다.')
+ const env = Object.fromEntries(serverEnv.trim().split(/\r?\n/).map(line => line.split('=')))
+ if (env.STAGING_ENV !== 'stage-bc' || env.MAIL_MODE !== 'mock' || env.SEND_ENABLED !== 'false' || Object.keys(env).some(name => /GMAIL|RECIPIENT|TOKEN|SECRET/.test(name))) throw new Error('Staging은 실제 발송 설정 없는 모의 처리만 허용됩니다.')
  return true
 }
 export function checkFiles(root = process.cwd()) {
  const read = file => fs.readFileSync(new URL(file, `file:///${root.replaceAll('\\', '/')}/`), 'utf8')
- return validateStaging({ project: stagingProject, config: JSON.parse(read('firebase.staging.json')), aliases: JSON.parse(read('.firebaserc')), html: read('dist-staging/staging.html'), publicConfig: read('src/staging/public-config.ts') })
+ return validateStaging({ project: stagingProject, config: JSON.parse(read('firebase.staging.json')), aliases: JSON.parse(read('.firebaserc')), html: read('dist-staging/staging.html'), publicConfig: read('src/staging/public-config.ts'), serverEnv: read('functions/.env.yingyangtest') })
 }
