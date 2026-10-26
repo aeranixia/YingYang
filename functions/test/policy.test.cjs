@@ -1,3 +1,5 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');const {allowedStage}=require('../lib/functions/src/policy');
 test('staging tester only',()=>{assert.equal(allowedStage('yingyangtest',true),true);for(const project of ['yingyangcheck','other',undefined])assert.equal(allowedStage(project,true),false);for(const tester of [false,undefined,'true',1])assert.equal(allowedStage('yingyangtest',tester),false)});
 test('best effort per-process limit resets after one minute',()=>{const {createLocalLimiter}=require('../lib/functions/src/policy');const limit=createLocalLimiter();for(let i=0;i<5;i++)assert.equal(limit(100000),true);assert.equal(limit(100000),false);assert.equal(limit(160001),true)});
+
+test('status endpoint accepts only an empty object, not primitive or array payloads',()=>{const {isEmptyStatusInput}=require('../lib/functions/src/policy');assert.equal(isEmptyStatusInput({}),true);for(const data of [null,undefined,false,0,'',[],[1],{name:'test'}])assert.equal(isEmptyStatusInput(data),false)});

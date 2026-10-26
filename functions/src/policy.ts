@@ -2,6 +2,9 @@ export const STAGING_PROJECT = 'yingyangtest'
 export function allowedStage(projectId: string | undefined, tester: unknown): boolean {
  return projectId === STAGING_PROJECT && tester === true
 }
+export function isEmptyStatusInput(data: unknown): boolean {
+ return data !== null && typeof data === 'object' && !Array.isArray(data) && Object.keys(data).length === 0
+}
 export function createLocalLimiter() {
  let windowStart = 0, count = 0
  return (now: number) => {

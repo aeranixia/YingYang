@@ -61,3 +61,14 @@ it('Staging hides all score tables and exposes submission only after both exams 
  expect(screen.queryByRole('form')).toBeNull(); expect(screen.queryByText('타고난 체질 결과 보기')).toBeNull()
  expect(localStorage.getItem(key('innate'))).toBe(before)
 })
+
+it('recovers form controls when request ID creation fails before network transmission', async () => {
+ const send = vi.fn()
+ vi.spyOn(crypto, 'randomUUID').mockImplementationOnce(() => { throw new Error('Unavailable entropy') })
+ render(<SubmissionForm states={states()} send={send}/>); enter()
+ fireEvent.submit(screen.getByRole('form'))
+ await screen.findByRole('alert')
+ expect(send).not.toHaveBeenCalled()
+ expect(screen.getByLabelText('이름').matches(':disabled')).toBe(false)
+ expect(screen.getByRole('form').getAttribute('aria-busy')).toBe('false')
+})

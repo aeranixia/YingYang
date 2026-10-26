@@ -13,10 +13,10 @@ export function SubmissionForm({ states, send }: { states: { acquired: Session; 
   event.preventDefault()
   if (locked.current || status === 'success' || !valid) return
   locked.current = true; setStatus('sending'); setMessage('PDF 생성과 모의 처리를 진행 중입니다. 실제 이메일은 발송하지 않습니다.')
-  const data = { version: states.acquired.version, name: name.trim(), phone: phone.replaceAll('-', ''), acquired: states.acquired.answers as number[], innate: states.innate.answers as number[], consent: { personal, sensitive, synthetic, version: consentVersion }, scenario }
-  const signature = JSON.stringify(data)
-  if (request.current.signature !== signature) request.current = { id: crypto.randomUUID(), signature }
   try {
+   const data = { version: states.acquired.version, name: name.trim(), phone: phone.replaceAll('-', ''), acquired: states.acquired.answers as number[], innate: states.innate.answers as number[], consent: { personal, sensitive, synthetic, version: consentVersion }, scenario }
+   const signature = JSON.stringify(data)
+   if (request.current.signature !== signature) request.current = { id: crypto.randomUUID(), signature }
    const result = await send({ ...data, requestId: request.current.id })
    if (result.status !== 'mock-completed' || result.requestId !== request.current.id) throw new Error('Unexpected response')
    setStatus('success'); setMessage('PDF 생성과 모의 처리가 완료되었습니다. 실제 이메일은 발송되지 않았습니다.')
