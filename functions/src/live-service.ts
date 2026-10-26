@@ -10,6 +10,7 @@ import type { Attachment } from './sender'
 export class LiveError extends Error {
  constructor(public readonly code: 'invalid-argument' | 'already-exists' | 'aborted' | 'resource-exhausted' | 'failed-precondition' | 'unavailable', public readonly outcomeUnknown = false) { super(code) }
 }
+export const DAILY_MAIL_ATTEMPT_LIMIT = 50
 const digest = (value: string, key: string) => createHmac('sha256', key).update(value).digest('hex')
 const canonical = (input: Submission) => JSON.stringify([input.requestId,input.version,input.name,input.phone,input.acquired,input.innate,[input.consent.personal,input.consent.sensitive,input.consent.synthetic,input.consent.version],input.scenario,input.completionProof ?? null])
 type Ticket = { operation: string; requestId: string; scope: string; expires: number }
@@ -41,7 +42,7 @@ export function createLiveService(store: StateStore, dispatch: (config: MailConf
   for (let i=0;i<5;i++) {
    const prior = await store.read<{count:number}>(name)
    const count = prior ? prior.value.count : 0
-   if (!Number.isInteger(count) || count < 0 || count >= 10) throw new LiveError('resource-exhausted')
+   if (!Number.isInteger(count) || count < 0 || count >= DAILY_MAIL_ATTEMPT_LIMIT) throw new LiveError('resource-exhausted')
    try { await store.write(name,{count:count+1},prior?.generation||'0'); return } catch(error) { if (!(error instanceof Conflict)) throw error }
   }
   throw new LiveError('unavailable')
@@ -66,7 +67,7 @@ export function createLiveService(store: StateStore, dispatch: (config: MailConf
   try {
    buffer = await pdf(input,completedAt)
    const accessToken = await authorize(config)
-   await quota(now)
+   await quota(clock())
    record={...record,state:'sending'}
    generation=await store.write(name,record,generation)
    sending=true

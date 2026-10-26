@@ -6,7 +6,7 @@ import { createSubmissionService, ServiceError } from './service'
 import { mockSender } from './sender'
 import { GcsStateStore } from './mail-state'
 import { readMailSecret, validateMailConfig, refreshGmailToken, dispatchGmail } from './gmail-sender'
-import { prepareMailTicket, createLiveService, LiveError } from './live-service'
+import { prepareMailTicket, createLiveService, LiveError, DAILY_MAIL_ATTEMPT_LIMIT } from './live-service'
 import { confirmCompletion } from './completion'
 
 const signingKey = defineSecret('STAGING_REQUEST_SIGNING_KEY')
@@ -32,7 +32,7 @@ export const stagingStatus = onCall(callableOptions, request => {
   catch { throw new HttpsError('invalid-argument', '완료된 검진 응답을 확인해 주세요.') }
  }
  if (!allowLocalRequest(Date.now())) throw new HttpsError('resource-exhausted', '잠시 후 다시 확인해 주세요.')
- return { phase: 'BC', projectId: 'yingyangtest', mailMode: 'mock', secretReady: signingKey.value().length >= 32 }
+ return { phase: 'BC', projectId: 'yingyangtest', mailMode: 'mock', secretReady: signingKey.value().length >= 32, dailyMailAttemptLimit: DAILY_MAIL_ATTEMPT_LIMIT }
 })
 
 const liveState = new GcsStateStore('yingyangtest-mail-state-495270334718')

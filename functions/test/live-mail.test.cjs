@@ -1,4 +1,4 @@
-const {test}=require('node:test'),assert=require('node:assert/strict'),{randomUUID}=require('node:crypto')
+﻿const {test}=require('node:test'),assert=require('node:assert/strict'),{randomUUID}=require('node:crypto')
 const {prepareMailTicket,createLiveService}=require('../lib/functions/src/live-service')
 const {Conflict,GcsStateStore}=require('../lib/functions/src/mail-state')
 const {validateMailConfig,composeTestMail}=require('../lib/functions/src/gmail-sender')
@@ -50,12 +50,12 @@ test('authorization failure before sending retries same ticket; mail outcome amb
  await assert.rejects(createLiveService(uncertainStore,async()=>{calls++},async()=>'fake',()=>epoch,pdf)(uncertain,uid,cfg,key),e=>e.outcomeUnknown===true)
  assert.equal(calls,1)
 })
-test('ten-per-Korea-day budget is shared across service restarts and corruption fails closed',async()=>{
+test('fifty-per-Korea-day budget is shared across service restarts and corruption fails closed',async()=>{
  const cfg=config(),store=new Memory();let calls=0
- for(let i=0;i<10;i++)await createLiveService(store,async()=>calls++,async()=>'fake',()=>epoch,pdf)(request(input()),uid,cfg,key)
- await assert.rejects(createLiveService(store,async()=>calls++,async()=>'fake',()=>epoch,pdf)(request(input()),uid,cfg,key),{code:'resource-exhausted'});assert.equal(calls,10)
+ for(let i=0;i<50;i++)await createLiveService(store,async()=>calls++,async()=>'fake',()=>epoch,pdf)(request(input()),uid,cfg,key)
+ await assert.rejects(createLiveService(store,async()=>calls++,async()=>'fake',()=>epoch,pdf)(request(input()),uid,cfg,key),{code:'resource-exhausted'});assert.equal(calls,50)
  const item=store.map.get('v1/days/2026-10-27');item.value.count=null
- await assert.rejects(createLiveService(store,async()=>calls++,async()=>'fake',()=>epoch,pdf)(request(input()),uid,cfg,key),{code:'resource-exhausted'});assert.equal(calls,10)
+ await assert.rejects(createLiveService(store,async()=>calls++,async()=>'fake',()=>epoch,pdf)(request(input()),uid,cfg,key),{code:'resource-exhausted'});assert.equal(calls,50)
 })
 test('MIME attachment is PDF, fixed To/From, encoded Korean filename, no CC/BCC',async()=>{
  const data=Buffer.from('%PDF-synthetic'),bytes=await composeTestMail(config(),{filename:'가상테스터_1234.pdf',content:data},randomUUID()),text=bytes.toString()
@@ -85,4 +85,47 @@ test('real-test PDF uses truthful email label and separate draft consent',async(
  assert.ok(text.includes('실제 이메일 테스트'));assert.ok(!text.includes('실제 이메일은 발송되지 않으며'));assert.equal(doc.numPages,1)
  assert.throws(()=>prepareMailTicket({...data,consent:{...data.consent,version:'staging-bc-draft-1'}},uid,config(),key,epoch))
  await loading.destroy();bytes.fill(0)
+})
+
+
+test('KST midnight uses reservation time even if PDF preparation started the previous day',async()=>{
+ const store=new Memory(),cfg=config();let now=Date.parse('2026-10-27T14:59:59.900Z'),calls=0
+ const make=()=>{const data=input();return {submission:data,ticket:prepareMailTicket(data,uid,cfg,key,now).ticket}}
+ await store.write('v1/days/2026-10-27',{count:50},'0')
+ const service=createLiveService(store,async()=>calls++,async()=>'fake',()=>now,async()=>{now=Date.parse('2026-10-27T15:00:00.100Z');return Buffer.from('%PDF-test')})
+ await service(make(),uid,cfg,key)
+ assert.equal(store.map.get('v1/days/2026-10-27').value.count,50)
+ assert.equal(store.map.get('v1/days/2026-10-28').value.count,1);assert.equal(calls,1)
+})
+
+test('concurrent distinct tickets at 49 reservations cannot exceed 50 across service instances',async()=>{
+ const store=new Memory(),cfg=config();let calls=0
+ await store.write('v1/days/2026-10-27',{count:49},'0')
+ const results=await Promise.allSettled(Array.from({length:20},()=>createLiveService(store,async()=>calls++,async()=>'fake',()=>epoch,pdf)(request(input()),uid,cfg,key)))
+ assert.equal(calls,1);assert.equal(store.map.get('v1/days/2026-10-27').value.count,50)
+ assert.equal(results.filter(x=>x.status==='fulfilled').length,1)
+ for(const r of results.filter(x=>x.status==='rejected'))assert.ok(['resource-exhausted','unavailable'].includes(r.reason.code))
+})
+
+test('failed dispatch consumes attempt without refund; same uncertain ticket and completed duplicate do not consume again',async()=>{
+ const cfg=config(),store=new Memory(),failed=request(input());let calls=0
+ const service=createLiveService(store,async()=>{calls++;throw Error('Synthetic send failure')},async()=>'fake',()=>epoch,pdf)
+ await assert.rejects(service(failed,uid,cfg,key),e=>e.outcomeUnknown)
+ await assert.rejects(service(failed,uid,cfg,key),e=>e.outcomeUnknown)
+ assert.equal(calls,1);assert.equal(store.map.get('v1/days/2026-10-27').value.count,1)
+ const ok=createLiveService(store,async()=>calls++,async()=>'fake',()=>epoch,pdf),r=request(input())
+ await ok(r,uid,cfg,key);assert.equal((await ok(r,uid,cfg,key)).duplicate,true)
+ assert.equal(calls,2);assert.equal(store.map.get('v1/days/2026-10-27').value.count,2)
+})
+
+test('PDF and OAuth failures before reservation cost no attempt; post-reservation state failure is not refunded',async()=>{
+ const cfg=config(),store=new Memory(),r=request(input());let calls=0
+ await assert.rejects(createLiveService(store,async()=>calls++,async()=>'fake',()=>epoch,async()=>{throw Error()})(r,uid,cfg,key))
+ assert.equal(store.map.has('v1/days/2026-10-27'),false)
+ await assert.rejects(createLiveService(store,async()=>calls++,async()=>{throw Error()},()=>epoch,pdf)(r,uid,cfg,key))
+ assert.equal(store.map.has('v1/days/2026-10-27'),false)
+ const store2=new Memory(),write=store2.write.bind(store2)
+ store2.write=async(name,value,gen)=>{if(value.state==='sending')throw Error('Synthetic state failure');return write(name,value,gen)}
+ await assert.rejects(createLiveService(store2,async()=>calls++,async()=>'fake',()=>epoch,pdf)(request(input()),uid,cfg,key))
+ assert.equal(calls,0);assert.equal(store2.map.get('v1/days/2026-10-27').value.count,1)
 })
