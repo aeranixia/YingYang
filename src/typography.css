@@ -64,6 +64,20 @@
 }
 .completed-result summary:focus-visible { outline: 3px solid #b58842; outline-offset: 4px; }
 .completed-result[open] .panel { margin-top: 12px; }
+@media (min-width: 641px) and (max-width: 1199px) {
+  .shell header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "brand edition" "settings settings";
+    column-gap: 20px;
+    row-gap: 12px;
+  }
+  .shell .header-tools { display: contents; }
+  .shell .brand { grid-area: brand; justify-self: start; min-width: 0; max-width: 100%; }
+  .shell .edition { grid-area: edition; justify-self: end; text-align: right; white-space: nowrap; }
+  .shell .edition-context { display: none; }
+  .shell .text-settings { grid-area: settings; justify-self: end; justify-content: flex-end; min-width: 0; max-width: 100%; }
+}
 @media(max-width: 640px) {
   .shell .header-tools { width: 100%; }
   .shell .text-settings { width: 100%; justify-content: space-between; }

@@ -1,4 +1,4 @@
-# YingYang v1.1
+# YingYang v1.1.1
 
 나의 체질을 알아보는 두 가지 진단. React + TypeScript + Vite + Tailwind CSS로 만든 모바일 우선 정적 웹앱입니다. 백엔드와 데이터베이스 없이 브라우저에서 작동합니다.
 
