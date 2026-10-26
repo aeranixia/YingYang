@@ -27,7 +27,8 @@ export const stagingStatus = onCall(callableOptions, request => {
  return { phase: 'BC', projectId: 'yingyangtest', mailMode: 'mock', secretReady: signingKey.value().length >= 32 }
 })
 
-const liveService = createLiveService(new GcsStateStore('yingyangtest-mail-state-495270334718'), dispatchGmail, refreshGmailToken)
+const liveState = new GcsStateStore('yingyangtest-mail-state-495270334718')
+const liveService = createLiveService(liveState, dispatchGmail, refreshGmailToken)
 const allowLive = createLocalLimiter()
 const liveHandler = (prepare: boolean) => onCall(callableOptions, async request => {
  if (!request.auth || !request.app) throw new HttpsError('unauthenticated', '테스트 인증이 필요합니다.')
@@ -35,15 +36,21 @@ const liveHandler = (prepare: boolean) => onCall(callableOptions, async request 
  if (!allowedStage(process.env.GCLOUD_PROJECT, request.auth.token.stagingTester) || process.env.STAGING_ENV !== 'stage-bc') throw new HttpsError('permission-denied', '테스트 환경만 허용됩니다.')
  if (request.rawRequest.rawBody?.length > 12000) throw new HttpsError('invalid-argument', '입력 크기를 확인해 주세요.')
  if (!allowLive(Date.now())) throw new HttpsError('resource-exhausted', '잠시 후 다시 시도해 주세요.')
+ let setupStage = 'configuration-read'
  try {
-  const config = validateMailConfig(JSON.parse(await readMailSecret('STAGING_GMAIL_CLIENT')))
+  const rawConfig = JSON.parse(await readMailSecret('STAGING_GMAIL_CLIENT'))
+  setupStage = 'control-read'
+  const control = await liveState.read<{ until: string }>('v1/control/mail')
+  setupStage = 'window-validation'
+  const config = validateMailConfig({ ...rawConfig, allowSendUntil: control?.value.until || '1970-01-01T00:00:00.000Z' })
+  setupStage = 'ticket-or-submission'
   const key = signingKey.value()
   if (key.length < 32) throw new Error('Invalid signing configuration')
   return prepare ? prepareMailTicket(request.data,request.auth.uid,config,key) : await liveService(request.data,request.auth.uid,config,key)
  } catch(error) {
   if (error instanceof InputError) throw new HttpsError('invalid-argument', '지정 가상 정보와 동의를 확인해 주세요.')
   if (error instanceof LiveError) throw new HttpsError(error.code, error.outcomeUnknown ? '발송 결과가 불명확합니다. 자동 재시도하지 말고 발신·수신 계정에서 확인해 주세요.' : '테스트 발송을 완료하지 못했습니다. 설정과 처리 상태를 확인해 주세요.', { outcomeUnknown:error.outcomeUnknown })
-  throw new HttpsError('failed-precondition', '실제 테스트 발송이 비활성화되었거나 서버 설정을 확인할 수 없습니다.')
+  throw new HttpsError('failed-precondition', '실제 테스트 발송이 비활성화되었거나 서버 설정을 확인할 수 없습니다.', { setupStage })
  }
 })
 export const prepareStagingReport = liveHandler(true)
