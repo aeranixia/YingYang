@@ -1,7 +1,7 @@
 {
   "name": "yingyang-staging-functions",
   "private": true,
-  "version": "0.0.0-stage-bc",
+  "version": "0.0.0-stage-e",
   "main": "lib/functions/src/index.js",
   "engines": {
     "node": "22"
@@ -13,9 +13,12 @@
   "dependencies": {
     "firebase-admin": "^14.5.0",
     "firebase-functions": "^7.0.0",
+    "google-auth-library": "^11.3.1",
+    "nodemailer": "^10.2.1",
     "pdfkit": "^0.20.2"
   },
   "devDependencies": {
+    "@types/nodemailer": "^8.0.2",
     "@types/pdfkit": "^0.17.7",
     "pdfjs-dist": "5.5.207",
     "typescript": "~5.7.3"

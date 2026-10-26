@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { calculate } from './submission'
 import type { Submission } from '../../src/staging/contracts'
 
-export async function createPdf(input: Submission, now: Date): Promise<Buffer> {
+export async function createPdf(input: Submission, now: Date, mode: 'mock' | 'gmail-test' = 'mock'): Promise<Buffer> {
  const scores = calculate(input)
  const doc = new PDFDocument({ size: 'A4', margin: 48, font: join(__dirname, '../../../assets/NanumGothic-Regular.ttf'), info: { Title: 'YingYang STAGING report', Author: 'YingYang' } })
  doc.registerFont('korean', join(__dirname, '../../../assets/NanumGothic-Regular.ttf'))
@@ -15,7 +15,7 @@ export async function createPdf(input: Submission, now: Date): Promise<Buffer> {
   doc.on('error', () => { chunks.forEach(c => c.fill(0)); chunks.length = 0; reject(new Error('PDF generation failed')) })
  })
  try {
-  doc.fontSize(11).fillColor('#98420e').text('STAGING · 가상 정보 · 모의 처리 전용')
+  doc.fontSize(11).fillColor('#98420e').text(mode === 'mock' ? 'STAGING · 가상 정보 · 모의 처리 전용' : 'STAGING · 가상 정보 · 실제 이메일 테스트')
   doc.moveDown().fontSize(21).fillColor('#203d34').text('YingYang 검사 결과지')
   doc.moveDown().fontSize(12).fillColor('#111111')
   doc.text(`이름: ${input.name}`).text(`전화번호: ${input.phone}`)
@@ -35,7 +35,7 @@ export async function createPdf(input: Submission, now: Date): Promise<Buffer> {
    doc.x = 48; doc.y = start + allRows.length * 27
   }
   doc.moveDown(1.3).fontSize(10).text('두 검사의 점수는 합산하지 않습니다. 체질 판정을 제공하지 않습니다.')
-  doc.text('실제 이메일은 발송되지 않으며 이 PDF는 서버에 영구 저장하지 않습니다.')
+  doc.text(mode === 'mock' ? '실제 이메일은 발송되지 않으며 이 PDF는 서버에 영구 저장하지 않습니다.' : '가상 자료의 이메일 테스트용입니다. 서버 PDF 저장은 없으며 메일함 사본은 별도 정리합니다.')
   doc.end()
  } catch {
   doc.destroy(new Error('PDF generation failed'))

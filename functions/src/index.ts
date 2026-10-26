@@ -4,10 +4,14 @@ import { allowedStage, createLocalLimiter, isEmptyStatusInput } from './policy'
 import { InputError } from './submission'
 import { createSubmissionService, ServiceError } from './service'
 import { mockSender } from './sender'
+import { GcsStateStore } from './mail-state'
+import { readMailSecret, validateMailConfig, refreshGmailToken, dispatchGmail } from './gmail-sender'
+import { prepareMailTicket, createLiveService, LiveError } from './live-service'
 
 const signingKey = defineSecret('STAGING_REQUEST_SIGNING_KEY')
 const allowLocalRequest = createLocalLimiter()
 const callableOptions: CallableOptions = {
+ serviceAccount: 'yingyang-staging-mail-runtime@yingyangtest.iam.gserviceaccount.com',
  region: 'asia-northeast3', minInstances: 0, maxInstances: 1, concurrency: 1,
  memory: '512MiB', cpu: 1, timeoutSeconds: 30,
  enforceAppCheck: true,
@@ -22,6 +26,28 @@ export const stagingStatus = onCall(callableOptions, request => {
  if (!allowLocalRequest(Date.now())) throw new HttpsError('resource-exhausted', '잠시 후 다시 확인해 주세요.')
  return { phase: 'BC', projectId: 'yingyangtest', mailMode: 'mock', secretReady: signingKey.value().length >= 32 }
 })
+
+const liveService = createLiveService(new GcsStateStore('yingyangtest-mail-state-495270334718'), dispatchGmail, refreshGmailToken)
+const allowLive = createLocalLimiter()
+const liveHandler = (prepare: boolean) => onCall(callableOptions, async request => {
+ if (!request.auth || !request.app) throw new HttpsError('unauthenticated', '테스트 인증이 필요합니다.')
+ if (request.auth.token.stagingMailTester !== true) throw new HttpsError('permission-denied', '실제 이메일 시험 권한이 필요합니다.')
+ if (!allowedStage(process.env.GCLOUD_PROJECT, request.auth.token.stagingTester) || process.env.STAGING_ENV !== 'stage-bc') throw new HttpsError('permission-denied', '테스트 환경만 허용됩니다.')
+ if (request.rawRequest.rawBody?.length > 12000) throw new HttpsError('invalid-argument', '입력 크기를 확인해 주세요.')
+ if (!allowLive(Date.now())) throw new HttpsError('resource-exhausted', '잠시 후 다시 시도해 주세요.')
+ try {
+  const config = validateMailConfig(JSON.parse(await readMailSecret('STAGING_GMAIL_CLIENT')))
+  const key = signingKey.value()
+  if (key.length < 32) throw new Error('Invalid signing configuration')
+  return prepare ? prepareMailTicket(request.data,request.auth.uid,config,key) : await liveService(request.data,request.auth.uid,config,key)
+ } catch(error) {
+  if (error instanceof InputError) throw new HttpsError('invalid-argument', '지정 가상 정보와 동의를 확인해 주세요.')
+  if (error instanceof LiveError) throw new HttpsError(error.code, error.outcomeUnknown ? '발송 결과가 불명확합니다. 자동 재시도하지 말고 발신·수신 계정에서 확인해 주세요.' : '테스트 발송을 완료하지 못했습니다. 설정과 처리 상태를 확인해 주세요.', { outcomeUnknown:error.outcomeUnknown })
+  throw new HttpsError('failed-precondition', '실제 테스트 발송이 비활성화되었거나 서버 설정을 확인할 수 없습니다.')
+ }
+})
+export const prepareStagingReport = liveHandler(true)
+export const submitStagingReport = liveHandler(false)
 
 const processSubmission = createSubmissionService(mockSender)
 const allowSubmission = createLocalLimiter()
