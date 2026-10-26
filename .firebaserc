@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "yingyangcheck"
+    "production": "yingyangcheck",
+    "staging": "yingyangtest"
   }
 }

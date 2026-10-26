@@ -1,5 +1,7 @@
 # Firebase CLI 수동 배포
 
+`develop/v1.2`에서는 운영 배포를 하지 않습니다. 이 문서의 운영 명령 대신 [Staging A 배포 절차](staging-a.md)를 따르고 `npm.cmd run deploy:staging`만 사용하세요. 아래는 기존 v1.1.1 운영 배포 기록입니다. Staging에는 별도의 Firebase SDK와 Functions 설정이 있습니다.
+
 프로젝트: YingYangCheck / ID: `yingyangcheck` / 번호: `231582543863`
 
 Hosting 주소: https://yingyangcheck.web.app

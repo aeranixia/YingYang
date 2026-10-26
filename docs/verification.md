@@ -70,3 +70,7 @@
 ## 배포 방식 변경 (2026-10-14)
 
 사용자 요청으로 GitHub Actions 자동 배포를 보류하고 Firebase CLI 사용자 로그인 기반 수동 배포로 전환했습니다. 앞 절의 Actions 및 Secret 안내는 당시 검증 기록이며 현재 배포 절차가 아닙니다. 워크플로는 `docs/firebase-hosting.yml.disabled`로 보관하여 실행을 중지했습니다. `firebase.json`, `.firebaserc`와 앱 코드는 유지했습니다. 현재 절차는 [수동 배포 안내](firebase-deployment.md)를 따릅니다. 사용자의 직접 로그인이 완료되기 전에는 실제 배포를 진행하지 않습니다.
+
+## Staging A 추가 검증 — 2026-10-26
+
+`develop/v1.2`의 테스트 프로젝트만 배포했다. 운영 사이트는 변경하지 않았다. 기존 검진 33개 + 배포 보호 2개 + Functions 정책 2개 통과, 운영·Staging·Functions 빌드 성공. 실제 테스트 URL에서 Auth/App Check/권한 거부/입력 차단/로그아웃 및 6개 화면 너비를 확인했다. 구체적 환경과 미검증 범위는 [Staging A 기록](staging-a.md)을 따른다.

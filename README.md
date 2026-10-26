@@ -1,5 +1,7 @@
 # YingYang v1.1.1
 
+`develop/v1.2`에는 별도 [Staging A단계](docs/staging-a.md)가 추가되어 있습니다. 테스트 주소는 https://yingyangtest.web.app 이며 가상 테스트 계정으로만 서버에 접근합니다. 운영 앱은 v1.1.1을 유지합니다. 이 브랜치에서는 `npm.cmd run deploy:staging`만 사용하고 운영에 배포하지 않습니다. 전용 진입점·Functions·접근 방법·비용·검증 한계는 위 문서를 확인하세요.
+
 나의 체질을 알아보는 두 가지 진단. React + TypeScript + Vite + Tailwind CSS로 만든 모바일 우선 정적 웹앱입니다. 백엔드와 데이터베이스 없이 브라우저에서 작동합니다.
 
 ## 실행
