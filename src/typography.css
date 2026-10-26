@@ -1,0 +1,78 @@
+.shell {
+  --text-scale: 1.5;
+  font-size: calc(1rem * var(--text-scale));
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.shell[data-text-size="small"] { --text-scale: 1; }
+.shell[data-text-size="large"] { --text-scale: 1.875; }
+.shell header { flex-wrap: wrap; gap: 20px; }
+.header-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; }
+.text-settings { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.text-settings > span { font-size: calc(0.875rem * var(--text-scale)); }
+.text-size-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+.text-size-buttons button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 1px solid #65785f;
+  color: #314c38;
+  background: #fff;
+  font-size: calc(1rem * var(--text-scale));
+}
+.text-size-buttons button[aria-pressed="true"] {
+  background: #234c42;
+  color: #fff;
+  border: 3px solid #234c42;
+  padding: 4px 10px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.shell .edition, .shell .card-number, .shell .card p, .shell .hero p, .shell .sub,
+.shell .hint, .shell .save-note, .shell .card-progress,
+.shell .question-index, .shell .eyebrow, .shell .info,
+.shell .answer-label, .shell .back, .shell footer { color: #4b614b; }
+.shell .cards, .shell .results {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 27rem), 1fr));
+}
+.shell .card, .shell .panel, .shell fieldset { min-width: 0; }
+.shell .question { max-width: 960px; }
+.shell .option { align-items: flex-start; padding-block: 20px; }
+.shell .option.selected { padding-block: 19px; }
+.shell .option > span:not(.option-number):not(.check) { min-width: 0; }
+.shell .option input { margin-top: 0.4em; width: 22px; height: 22px; }
+.shell .check { flex-shrink: 0; }
+.shell .actions { flex-wrap: wrap; }
+.shell .actions button { flex: 1 1 9rem; min-width: 0; justify-content: center; }
+.shell .primary, .shell .secondary { white-space: normal; overflow-wrap: anywhere; }
+.shell table { table-layout: fixed; }
+.shell th, .shell td { vertical-align: middle; }
+.shell .question-progress { flex-wrap: wrap; gap: 8px; }
+.shell footer { flex-wrap: wrap; gap: 12px 20px; }
+.shell footer > span { flex-shrink: 0; }
+.shell .modal { width: min(100%, 38rem); max-width: 38rem; max-height: calc(100dvh - 40px); overflow-y: auto; }
+.completed-result { margin-top: 24px; }
+.completed-result summary {
+  min-height: 48px;
+  padding: 14px 18px;
+  border: 1px solid #65785f;
+  border-radius: 12px;
+  background: #edf2e8;
+  cursor: pointer;
+  font-weight: 650;
+}
+.completed-result summary:focus-visible { outline: 3px solid #b58842; outline-offset: 4px; }
+.completed-result[open] .panel { margin-top: 12px; }
+@media(max-width: 640px) {
+  .shell .header-tools { width: 100%; }
+  .shell .text-settings { width: 100%; justify-content: space-between; }
+  .shell .option { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; }
+  .shell .option input { margin-top: 0.35em; }
+  .shell .option-number { grid-column: 2; }
+  .shell .option .check { grid-row: 1; grid-column: 3; }
+  .shell .option > span:not(.option-number):not(.check) { grid-column: 1 / -1; }
+  .shell .panel { padding-inline: 14px; }
+  .shell th, .shell td { padding: 12px 8px; }
+  .shell .actions { gap: 12px; }
+}
