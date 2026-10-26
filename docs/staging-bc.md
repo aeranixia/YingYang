@@ -1,5 +1,7 @@
 # v1.2 Staging B·C단계
 
+B·C 완료 당시 기록이다. 후속 승인에 따른 [D단계 검증/수정과 잔여 위험](staging-d.md), [E단계 사전 검토](staging-e-preparation.md)를 함께 확인한다.
+
 2026-10-26, 이슈 [#4](https://github.com/aeranixia/YingYang/issues/4). B·C단계 승인 범위만 구현했다. D 이후, Gmail OAuth, 실제 이메일, 공유 저장소, 운영 배포는 별도 승인 대상이다. 운영은 v1.1.1, 개발 브랜치는 `develop/v1.2`이며 출시 태그는 추가하지 않는다.
 
 ## 접속과 직접 확인

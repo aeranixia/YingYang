@@ -1,5 +1,9 @@
 # YingYang v1 검증 기록
 
+## Staging D단계 — 2026-10-26
+
+기존 48개를 유지해 총 54개 자동 테스트 통과. 요청 ID 생성 실패 시 폼 잠김과 상태 확인의 느슨한 입력 검증을 커밋 `9df142b`에서 수정하고 Staging에만 배포했다. Chrome/WebKit의 6너비×3글자×5화면, 실제 접근 차단/응답 유실 재시도, PDF·로그·저장·리소스 점검을 수행했다. 실제 Safari·실기기·클라우드 강제 timeout/재시작·지속 고부하는 미검증이다. [전체 결과와 잔여 위험](staging-d.md), [Gmail 발신/네이버 테스트 수신 및 미정인 한의원 운영 수신자 계획](staging-e-preparation.md)을 참고한다. 운영과 main/기존 태그는 유지했다.
+
 ## Staging 로그인 점검 — 2026-10-26
 
 - `staging-tester@yingyangtest.invalid` 존재, 활성 상태, 이메일 확인 및 테스터 custom claim 확인.
