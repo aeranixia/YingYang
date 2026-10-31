@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import App from '../App'
+import { PrivacyPolicy, retentionNotice } from './PrivacyPolicy'
 import { SubmissionForm } from './SubmissionForm'
 import type { Submission, MockReceipt } from './contracts'
 import { markCompletion, confirmPending } from './completion'
@@ -81,7 +82,9 @@ export function PrivacyGate({ authorize, verify, confirm, send }: Props) {
  return <>
   <section className="panel privacy-panel" aria-label="검사 개인정보 보호"><strong>STAGING · 가상 자료 전용 · 검토용 동의 ({privacyVersion})</strong>
    <p>공유 기기에는 검사 응답이 남을 수 있습니다. 로그아웃과 검사 데이터 삭제는 다릅니다.</p>
-   <p>검사별 마지막 실제 저장 후 7일이 지나면 다음 접속·검사 시 삭제합니다. 브라우저가 닫혀 있는 동안 정확히 7일 정각에 물리 삭제되지는 않습니다.</p>
+   <p>{retentionNotice}</p>
+   <p>브라우저가 닫혀 있으면 다음 실행 때 만료를 확인하고 삭제합니다.</p>
+   <PrivacyPolicy/>
    <button type="button" className="secondary" onClick={() => setRemoval(true)}>검사 데이터 모두 삭제</button>
    {message && <p role="status">{message}</p>}
   </section>
@@ -89,7 +92,9 @@ export function PrivacyGate({ authorize, verify, confirm, send }: Props) {
    <h1>검사 시작 전 안내와 동의</h1>
    <p>가상 응답의 자동 저장·이어하기, 서버 완료 확인·재집계, PDF 생성과 모의 처리에 사용합니다. 이름·전화번호는 검사 후 가상 정보만 입력하며 브라우저에 영구 저장하지 않습니다.</p>
    <p>검사 시작·이어하기와 응답의 서버 전송 전에 아래 두 항목에 각각 동의해 주세요. 서버 동의 확인 요청에는 검사 응답을 넣지 않습니다.</p>
-   <p>운영 주체·한의원과의 제공/위탁 관계·국외 이전 근거·공식 문의처·법적 보관 및 동의 증빙 정책은 미확정입니다. 이 문구는 운영용 개인정보처리방침이 아닙니다. 실제 메일 전송은 열리지 않습니다.</p>
+   <p>유케이한의원에 예약한 내원 예정 환자의 진료 준비를 위한 사전 검사입니다. 지금은 가상 정보 전용 Staging이며 실제 환자 정보를 입력하지 마세요. 문의는 프론트(접수 및 처리), 1800-7544 / 1800-6544입니다.</p>
+   <p>개인정보 수집·이용 항목은 응답·진행 상태·동의 및 완료 증명이며 저장·이어하기와 서버 완료 확인에 사용합니다. 건강 관련 응답과 집계는 민감정보로 구분하여 별도 동의를 받습니다. 이름·전화번호 및 PDF 모의 처리 동의는 검사 후 별도로 확인합니다.</p>
+   <p>위 개인정보처리방침 검토본의 보관·삭제 및 최종 확인 필요 항목을 확인해 주세요. 법적 주체·보호책임자·위탁/국외 처리 근거·증빙 정책은 확인 전이며 운영용 최종 동의가 아닙니다. 실제 메일 전송은 열리지 않습니다.</p>
    <p>거부할 수 있으며 거부 시 이 Staging 검사의 저장·이어하기·완료 확인·모의 전송은 이용할 수 없습니다. 다른 진료·상담 전체의 제한을 뜻하지 않습니다.</p>
    <label className="consent-check"><input type="checkbox" checked={personal} onChange={e => setPersonal(e.target.checked)} disabled={busy}/>개인정보 수집·이용에 동의합니다 (Staging 가상 검토용)</label>
    <label className="consent-check"><input type="checkbox" checked={sensitive} onChange={e => setSensitive(e.target.checked)} disabled={busy}/>건강 관련 민감정보 처리에 별도로 동의합니다 (Staging 가상 검토용)</label>

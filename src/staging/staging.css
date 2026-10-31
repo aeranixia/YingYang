@@ -3,3 +3,7 @@
 .privacy-panel button { min-height: 44px; margin: 8px 8px 8px 0; max-width: 100%; white-space: normal; }
 .privacy-panel .consent-check { display: flex; gap: 12px; align-items: center; min-height: 44px; margin: 16px 0; }
 .privacy-panel { font-size: 1.125rem; line-height: 1.65; }
+
+.privacy-policy summary { cursor: pointer; min-height: 44px; padding: 12px 0; font-weight: 700; }
+.privacy-policy h2 { font-size: 1.25em; margin-top: 24px; }
+.privacy-policy:focus-within { outline-offset: 4px; }

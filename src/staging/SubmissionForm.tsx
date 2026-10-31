@@ -50,6 +50,6 @@ export function SubmissionForm({ states, send, confirm, guard }: { states: { acq
  <label htmlFor="mock-scenario">모의 처리 시나리오</label><select id="mock-scenario" value={scenario} onChange={e => setScenario(e.target.value as MockScenario)}><option value="success">정상 처리</option><option value="fail-once">처음 실패 후 재시도 성공</option></select>
  <button className="primary" disabled={!valid} type="submit">{status === 'sending' ? '모의 처리 중…' : status === 'error' ? '모의 전송 재시도' : status === 'success' ? '모의 처리 완료' : '검사 결과 보내기 (모의)'}</button></fieldset>
  </form>{message && <p role={status === 'error' ? 'alert' : 'status'} className="notice">{message}</p>}
- <aside className="info"><p>상담 안내: Staging에서는 한의원 상담 접수나 연락을 제공하지 않습니다. 한의원 공식 연락처와 실제 수신자는 아직 확정되지 않았습니다.</p></aside>
+ <aside className="info"><p>유케이한의원 개인정보 문의: 프론트(접수 및 처리), 1800-7544 / 1800-6544. 현재 Staging은 가상 PDF 모의 처리용이며 실제 상담 접수나 이메일 발송을 제공하지 않습니다.</p></aside>
  </section>
 }

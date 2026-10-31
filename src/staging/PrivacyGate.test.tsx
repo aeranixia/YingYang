@@ -11,6 +11,9 @@ function agree(){for(const box of screen.getAllByRole('checkbox'))fireEvent.clic
 it('separate pre-exam consent gates start and no responses sent before user accepts',async()=>{
  const props=callbacks();render(<PrivacyGate {...props}/>)
  await screen.findByRole('heading',{name:'검사 시작 전 안내와 동의'})
+ expect(screen.getAllByText('검사 중 임시 저장된 응답은 마지막 저장일로부터 7일간 유지되며, 7일이 지나면 만료됩니다.').length).toBe(2)
+ expect(screen.getByText('유케이한의원 개인정보처리방침 · Staging 검토본 보기')).toBeTruthy()
+ expect(screen.getByRole('heading',{name:'최종 게시 전 확인 필요',hidden:true})).toBeTruthy()
  expect(screen.queryByText('다른 탭의 검사 변경을 반영했습니다.')).toBeNull()
  const start=screen.getByRole('button',{name:'동의하고 검사 시작·이어하기'}) as HTMLButtonElement
  expect(start.disabled).toBe(true);fireEvent.click(screen.getAllByRole('checkbox')[0]);expect(start.disabled).toBe(true)
