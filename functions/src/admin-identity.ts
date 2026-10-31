@@ -13,7 +13,7 @@ export type Session = {role:Role;local:boolean;mustChange:boolean;canBootstrap:b
 export type Config = {googleEmail:string;googleUid?:string;localUid:string;setupOperatorUid:string}
 export type LocalAccount = {salt:string;hash:string;version:number;mustChange:boolean;bootstrapConsumed:boolean;resetOwnerUid:string;failures:number;lockedUntil:number;sessionId?:string;reauthNonce?:string;reauthAt?:number}
 export type Member = {email:string;uid?:string;active:boolean;createdAt:number;updatedAt:number}
-export interface IdentityAdapter { sign(uid:string,claims:Record<string,unknown>):Promise<string>; revoke(uid:string):Promise<void>; googleUser(uid:string):Promise<{email?:string;verified:boolean;google:boolean;disabled:boolean}> }
+export interface IdentityAdapter { sign(uid:string,claims:Record<string,unknown>):Promise<string>; revoke(uid:string):Promise<void>; ensureGoogleUser(email:string):Promise<string>; googleUser(uid:string):Promise<{email?:string;verified:boolean;google:boolean;disabled:boolean}> }
 export async function passwordHash(password:string,salt=randomBytes(16).toString('hex')) { const hash=await scrypt(password,salt,64) as Buffer;return {salt,hash:hash.toString('hex')} }
 async function matches(password:string,record:LocalAccount) { if(!/^[a-f0-9]{128}$/.test(record.hash)||!/^[a-f0-9]{32}$/.test(record.salt))throw new IdentityError('unavailable');const value=await passwordHash(password,record.salt);return timingSafeEqual(Buffer.from(value.hash,'hex'),Buffer.from(record.hash,'hex')) }
 function gmail(value:unknown):string { if(typeof value!=='string'||value.length>254||!/^[-a-zA-Z0-9._%+]+@gmail\.com$/.test(value.trim()))throw new IdentityError('invalid-argument');return value.trim().toLowerCase() }
@@ -76,7 +76,7 @@ export class AdminIdentity {
   if(d.action==='approve'||d.action==='revoke'){
    body(raw,['action','email']);const email=gmail(d.email),cfg=await this.config();if(email===cfg.value.googleEmail.toLowerCase())throw new IdentityError('permission-denied')
    const name=memberKey(email),prior=await this.store.read(name),m=prior?.value as Member;await this.audit(c,'account-'+d.action,'requested',email)
-   if(d.action==='approve'){await this.store.write(name,{email,active:true,...(m?.uid?{uid:m.uid}:{}),createdAt:m?.createdAt||this.clock(),updatedAt:this.clock()},prior?.generation||'0')}
+   if(d.action==='approve'){const uid=await this.adapter.ensureGoogleUser(email);if(m?.uid&&m.uid!==uid)throw new IdentityError('permission-denied');await this.store.write(name,{email,active:true,uid,createdAt:m?.createdAt||this.clock(),updatedAt:this.clock()},prior?.generation||'0')}
    else{if(!prior)throw new IdentityError('invalid-argument');await this.store.write(name,{email,active:false,updatedAt:this.clock()},prior.generation);if(m.uid)await this.adapter.revoke(m.uid)}
    await this.audit(c,'account-'+d.action,'completed',email);return {ok:true}
   }

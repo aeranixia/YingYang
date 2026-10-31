@@ -13,6 +13,7 @@ import { ReportArchive, GcsArchiveStore, AdminError } from './admin-reports'
 import { getApps, initializeApp } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
 import { AdminIdentity, GcsIdentityStore, IdentityError, IdentityConflict, type IdentityContext } from './admin-identity'
+import { provisionGoogleAdmin } from './admin-auth-users'
 
 const signingKey = defineSecret('STAGING_REQUEST_SIGNING_KEY')
 const allowLocalRequest = createLocalLimiter()
@@ -106,6 +107,7 @@ function identity() {
  return new AdminIdentity(new GcsIdentityStore(), {
   sign: (uid,claims)=>firebaseAdmin.createCustomToken(uid,claims),
   revoke: uid=>firebaseAdmin.revokeRefreshTokens(uid),
+  ensureGoogleUser: email=>provisionGoogleAdmin(firebaseAdmin,email),
   googleUser: async uid=>{const u=await firebaseAdmin.getUser(uid);return {email:u.email,verified:u.emailVerified,google:u.providerData.some(p=>p.providerId==='google.com'),disabled:u.disabled}},
  },signingKey.value())
 }
