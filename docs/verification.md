@@ -1,5 +1,15 @@
 # YingYang v1 검증 기록
 
+## 관리자 Google 전용 전환 — 2026-11-01
+
+- 사용자 승인으로 별도 마스터 ID·비밀번호·변경·초기화·커스텀 토큰 경로와 설정 탭을 제거했다. 고정 Google 웹마스터와 승인 Google 관리자만 서버 역할을 얻는다. 과거 로컬 토큰도 거부한다.
+- **UI69 + 배포 보호2 + 서버52 =123개 통과.** npm test, 일반 build, build:staging, functions:build, functions:test 성공. 폐기한 비밀번호 테스트는 Google 전용/레거시 경로 거부 검증으로 대체했다.
+- 기존 Google 웹마스터가 활성·검증·Google 연결·고정 UID 상태임을 확인한 뒤 Staging 별도 마스터 Auth 사용자와 비밀번호 해시를 삭제했다. 초기 담당자/로컬 UID 설정 및 불필요한 signBlob 역할 바인딩 제거. 승인 목록·Google 웹마스터는 유지했다.
+- 로컬 가상 역할로 Chrome/WebKit에서 로그인 전 비밀번호 필드0, 마스터2탭/일반1탭, 키보드 조작과320/390/768/820/1024/1440px 넘침 없음 확인. 공개 미리보기 이미지도 현재2탭으로 갱신.
+- 실제 Staging 관리자 로그인 페이지200, Chrome/WebKit에서 Google 버튼만 표시·비밀번호/접힌 별도 로그인 경로0 확인. Staging HTML/JS200·빌드 해시 일치·noindex/no-store 및 운영 HTML 기준 해시 일치 확인.
+- 실제 테스트 계정으로 Auth/App Check를 거치는 서버 검수는 App Check 헤더 미발급401 UNAUTHENTICATED로 중단됐다. 이번 변경 후 실제 Google 재로그인·로그/PDF 조회까지 자동 검증했다고 보고하지 않는다. 서버 Google 권한·승인/회수·삭제 API 거부는 자동 테스트 결과이다. 사용자는 앞서 실제 일반 Google 계정의 승인·사용·회수가 정상이라고 확인했다.
+- Staging Hosting/Functions만 배포. 운영 전환 중지·main 미변경·실제 메일0·발송 창 미개방 유지. 기존 검사 테스트 계정은 관리자와 별도이므로 유지했다.
+
 ## #7 관리자 UI 전면 정리 — 2026-11-01
 
 - 최신 요청 [6548234546](https://github.com/aeranixia/YingYang/issues/7#issuecomment-6548234546) 반영. 로그인 전·후·승인 대기·필수 비밀번호 변경 화면을 분리하고, 로그인 후에는 로그인 폼/중복 인증 안내가 나타나지 않는다.

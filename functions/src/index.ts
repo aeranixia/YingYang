@@ -105,7 +105,6 @@ export const submitMockReport = onCall(callableOptions, async request => {
 const firebaseAdmin = getAuth(getApps()[0] || initializeApp({projectId:'yingyangtest'}))
 function identity() {
  return new AdminIdentity(new GcsIdentityStore(), {
-  sign: (uid,claims)=>firebaseAdmin.createCustomToken(uid,claims),
   revoke: uid=>firebaseAdmin.revokeRefreshTokens(uid),
   ensureGoogleUser: email=>provisionGoogleAdmin(firebaseAdmin,email),
   googleUser: async uid=>{const u=await firebaseAdmin.getUser(uid);return {email:u.email,verified:u.emailVerified,google:u.providerData.some(p=>p.providerId==='google.com'),disabled:u.disabled}},
@@ -126,9 +125,6 @@ export const adminIdentity = onCall(callableOptions,async request=>{
   if(!raw||typeof raw!=='object'||Array.isArray(raw)||typeof raw.action!=='string')throw new IdentityError('invalid-argument')
   const {action,...data}=raw,c=identityContext(request),service=identity()
   if(action==='session'&&Object.keys(data).length===0)return await service.session(c)
-  if(action==='login')return await service.login(data,c)
-  if(action==='reauthenticate')return await service.reauthenticate(data,c)
-  if(action==='change-password')return await service.changePassword(data,c)
   if(action==='accounts'){const {operation,...fields}=data;return await service.accounts({...fields,action:operation},c)}
   throw new IdentityError('invalid-argument')
  }catch(error){
