@@ -36,7 +36,7 @@ test('server requires admin claim, staging project and App Check before reading 
 test('failed PDF download expires at exact seven-day boundary, deletes expired object and records access',async()=>{
  let now=Date.now();const store=new Store(),archive=new ReportArchive(store,()=>now),id=randomUUID(),start=now
  await archive.capture(input(),pdf(),id,'mock');await archive.update(id,'failed','mock-failed')
- now=start+archiveDays-1;const got=await archive.download({id},context,key);assert.equal(Buffer.from(got.base64,'base64').subarray(0,5).toString(),'%PDF-');assert.equal(got.filename,'검사결과_1234.pdf')
+ now=start+archiveDays-1;const got=await archive.download({id},context,key);assert.equal(Buffer.from(got.base64,'base64').subarray(0,5).toString(),'%PDF-');assert.equal(got.filename,'가＊＊＊터(1234).pdf');assert.equal(/[<>:"/\\|?*\x00-\x1f]/.test(got.filename),false);assert.equal(got.filename.includes('가상테스터'),false)
  now=start+archiveDays;await assert.rejects(archive.download({id},context,key),e=>e.code==='failed-precondition');assert.equal(store.data.has('pdf/'+id+'.pdf'),false)
  assert.equal((await archive.page({},context,key)).reports.length,0)
  assert.ok([...store.data].filter(([n])=>n.startsWith('access/')).some(([,v])=>JSON.parse(v.bytes.toString()).outcome==='expired'))

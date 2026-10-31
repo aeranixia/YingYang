@@ -112,7 +112,8 @@ export class ReportArchive implements DeliveryArchive {
    if(file.bytes.length>1048576||file.bytes.subarray(0,5).toString()!=='%PDF-')throw new AdminError('unavailable')
    await this.audit(context,key,'download','allowed',id)
    if (this.clock() >= item.report.expiresAt) { await this.store.remove('pdf/'+id+'.pdf'); throw new AdminError('failed-precondition') }
-   return {base64:file.bytes.toString('base64'),filename:'검사결과_'+item.report.phoneLast4+'.pdf'}
+   const name=item.report.maskedName.replaceAll('*','＊').replace(/[^\p{L}\p{N}＊ -]/gu,'') || '＊'
+   return {base64:file.bytes.toString('base64'),filename:name+'('+item.report.phoneLast4+').pdf'}
   } finally { file.bytes.fill(0) }
  }
 }
