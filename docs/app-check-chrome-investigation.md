@@ -4,6 +4,8 @@
 
 ## 1. 결론
 
+최신 지시6544795734에 따라 Chrome 자동화403 추가 재현·조사·집계 조회는 중단한다. 원인 미확정·보안 유지. 아래 내용은 과거 조사 기록이며, [일반 브라우저 최종 검증 상태](final-browser-verification.md)를 참조한다.
+
 후속 A안 관찰: 2026-10-31 23:22:06 KST 기존 집계를1회 재조회했으나 자료 범위/값이 이전과 동일했다. 추가 브라우저 재현·새 평가·설정 변경은 하지 않았다. [최신 관찰 기준과 한계](clinic-previsit-policy-notes.md#5-chrome-a안-관찰-추가-재현-없음) 참조. 원인은 여전히 미확정이다.
 
 실패 단계는 **로그인 전, App Check의 reCAPTCHA Enterprise 교환**이다. Windows의 일반 Playwright Chrome 자동화에서403/PERMISSION_DENIED·attestation 실패가 재현됐고, 바로 이어 동일 PC/네트워크의 WebKit 자동화는200을 받았다. 이번 최소 재현은 로그인·검사·callable·Gmail 호출을 하지 않았다.
