@@ -52,7 +52,7 @@ npm run build
 
 ## 코드와 데이터
 
-Staging 관리자 기능은 [#7 관리자 안내](docs/issue-7-admin-reports.md)에 있습니다. `/admin`은 관리자 claim·Auth·App Check를 서버에서 확인하며, 가상 PDF를 비공개 저장소에7일 보관합니다. 실제 발송 창과 운영 사이트는 별도이며 #4 운영 배포 작업은 현재 보류 상태입니다.
+Staging 관리자 기능은 [#7 관리자 안내](docs/issue-7-admin-reports.md)에 있습니다. `/admin`은 Google 로그인·서버 승인/UID 연결·Auth·App Check를 확인합니다. 별도 ID·비밀번호는 마스터만 사용하며 일회용 초기 로그인과 강제 변경을 적용합니다. 일반 관리자도 가상 PDF를7일 이내에 조회할 수 있습니다. 실제 발송 창과 운영 사이트는 별도이며 #4 운영 배포 작업은 현재 보류 상태입니다.
 
 - `src/questions.ts`: 사진에서 옮긴 문항, 강조 구절, 분류표
 - `src/engine.ts`: 상태 전이, 검증, 저장·복구, 순수 집계 함수

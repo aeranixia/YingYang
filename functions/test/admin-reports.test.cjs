@@ -4,7 +4,7 @@ const {createSubmissionService}=require('../lib/functions/src/service')
 const {mockSender}=require('../lib/functions/src/sender')
 const {consentVersion}=require('../lib/src/staging/contracts')
 const key='synthetic-admin-test-signing-key-32-characters'
-const context={project:'yingyangtest',uid:'synthetic-admin',app:true,claims:{stagingTester:true,stagingAdmin:true}}
+const context={project:'yingyangtest',uid:'synthetic-admin',app:true,role:'admin'}
 class Store {
  constructor(){this.data=new Map();this.n=0;this.reads=0}
  async read(name){this.reads++;const x=this.data.get(name);return x?{bytes:Buffer.from(x.bytes),generation:x.generation}:null}
@@ -28,7 +28,7 @@ test('masked metadata excludes identity/answers; PDF is private separate object,
 })
 test('server requires admin claim, staging project and App Check before reading archive',async()=>{
  const store=new Store(),archive=new ReportArchive(store)
- for(const c of [{...context,project:'yingyangcheck'},{...context,app:false},{...context,uid:undefined},{...context,claims:{stagingTester:true}},{...context,claims:{stagingAdmin:true}}]){
+ for(const c of [{...context,project:'yingyangcheck'},{...context,app:false},{...context,uid:undefined},{...context,role:undefined},{...context,role:'none'}]){
   await assert.rejects(archive.page({},c,key),e=>e.code==='permission-denied');await assert.rejects(archive.download({id:randomUUID()},c,key),e=>e.code==='permission-denied')
  }
  assert.equal(store.reads,0);assert.equal(store.data.size,0);assert.throws(()=>new GcsArchiveStore('yingyangcheck'))

@@ -10,6 +10,9 @@ import { prepareMailTicket, createLiveService, LiveError, DAILY_MAIL_ATTEMPT_LIM
 import { confirmCompletion } from './completion'
 import { issuePrivacy, verifyPrivacy } from './privacy'
 import { ReportArchive, GcsArchiveStore, AdminError } from './admin-reports'
+import { getApps, initializeApp } from 'firebase-admin/app'
+import { getAuth } from 'firebase-admin/auth'
+import { AdminIdentity, GcsIdentityStore, IdentityError, IdentityConflict, type IdentityContext } from './admin-identity'
 
 const signingKey = defineSecret('STAGING_REQUEST_SIGNING_KEY')
 const allowLocalRequest = createLocalLimiter()
@@ -98,19 +101,54 @@ export const submitMockReport = onCall(callableOptions, async request => {
  }
 })
 
+const firebaseAdmin = getAuth(getApps()[0] || initializeApp({projectId:'yingyangtest'}))
+function identity() {
+ return new AdminIdentity(new GcsIdentityStore(), {
+  sign: (uid,claims)=>firebaseAdmin.createCustomToken(uid,claims),
+  revoke: uid=>firebaseAdmin.revokeRefreshTokens(uid),
+  googleUser: async uid=>{const u=await firebaseAdmin.getUser(uid);return {email:u.email,verified:u.emailVerified,google:u.providerData.some(p=>p.providerId==='google.com'),disabled:u.disabled}},
+ },signingKey.value())
+}
+function identityContext(request: {auth?: {uid:string;token:Record<string,unknown>};app?:unknown}):IdentityContext {
+ const t=request.auth?.token,f=t?.firebase as {sign_in_provider?:string}|undefined
+ return {project:process.env.GCLOUD_PROJECT,uid:request.auth?.uid,app:!!request.app,provider:f?.sign_in_provider,email:typeof t?.email==='string'?t.email:undefined,emailVerified:t?.email_verified===true,authTime:typeof t?.auth_time==='number'?t.auth_time:undefined,claims:t}
+}
+const allowIdentity=createLocalLimiter(30)
+export const adminIdentity = onCall(callableOptions,async request=>{
+ request.rawRequest.res?.setHeader('Cache-Control','no-store')
+ if(process.env.GCLOUD_PROJECT!=='yingyangtest'||!request.app)throw new HttpsError('permission-denied','접근할 수 없습니다.')
+ if(request.rawRequest.rawBody?.length>4096)throw new HttpsError('invalid-argument','요청을 확인해 주세요.')
+ if(!allowIdentity(Date.now()))throw new HttpsError('resource-exhausted','잠시 후 다시 시도해 주세요.')
+ try {
+  const raw=request.data as Record<string,unknown>
+  if(!raw||typeof raw!=='object'||Array.isArray(raw)||typeof raw.action!=='string')throw new IdentityError('invalid-argument')
+  const {action,...data}=raw,c=identityContext(request),service=identity()
+  if(action==='session'&&Object.keys(data).length===0)return await service.session(c)
+  if(action==='login')return await service.login(data,c)
+  if(action==='reauthenticate')return await service.reauthenticate(data,c)
+  if(action==='change-password')return await service.changePassword(data,c)
+  if(action==='accounts'){const {operation,...fields}=data;return await service.accounts({...fields,action:operation},c)}
+  throw new IdentityError('invalid-argument')
+ }catch(error){
+  if(error instanceof IdentityError)throw new HttpsError(error.code,'관리자 인증·권한 또는 최근 본인 확인 상태를 확인해 주세요.')
+  if(error instanceof IdentityConflict)throw new HttpsError('aborted','다른 요청과 충돌했습니다. 상태를 확인한 뒤 다시 시도해 주세요.')
+  throw new HttpsError('unavailable','관리자 인증을 처리하지 못했습니다.')
+ }
+})
 const allowAdmin = createLocalLimiter()
 const adminHandler = (download: boolean) => onCall(callableOptions, async request => {
  request.rawRequest.res?.setHeader('Cache-Control','no-store')
- const context = {project:process.env.GCLOUD_PROJECT,uid:request.auth?.uid,app:!!request.app,claims:request.auth?.token}
- if (!deliveryArchive || !request.auth || !request.app || request.auth.token.stagingAdmin!==true || !allowedStage(process.env.GCLOUD_PROJECT,request.auth.token.stagingTester)) throw new HttpsError('permission-denied','관리자 권한이 필요합니다.')
+ if (!deliveryArchive || !request.auth || !request.app) throw new HttpsError('permission-denied','관리자 권한이 필요합니다.')
  if (request.rawRequest.rawBody?.length>4096) throw new HttpsError('invalid-argument','요청을 확인해 주세요.')
  if (!allowAdmin(Date.now())) throw new HttpsError('resource-exhausted','잠시 후 다시 조회해 주세요.')
  try {
   const key=signingKey.value()
   if(key.length<32)throw Error()
+  const session=await identity().authorize(identityContext(request))
+  const context={project:process.env.GCLOUD_PROJECT,uid:request.auth.uid,app:true,role:session.role==='master'?'master' as const:'admin' as const}
   return download ? await reportArchive.download(request.data,context,key) : await reportArchive.page(request.data,context,key)
  } catch(error) {
-  if(error instanceof AdminError)throw new HttpsError(error.code,'관리자 조회 요청을 처리할 수 없습니다. 권한·필터·PDF 만료 상태를 확인해 주세요.')
+  if(error instanceof AdminError||error instanceof IdentityError)throw new HttpsError(error.code,'관리자 권한·비밀번호 변경·PDF 만료 상태를 확인해 주세요.')
   throw new HttpsError('unavailable','관리자 저장소를 확인할 수 없습니다. 잠시 후 다시 시도해 주세요.')
  }
 })

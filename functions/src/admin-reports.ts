@@ -14,9 +14,9 @@ export interface ArchiveStore {
 }
 export class ArchiveConflict extends Error {}
 export class AdminError extends Error { constructor(public readonly code: 'permission-denied' | 'invalid-argument' | 'not-found' | 'failed-precondition' | 'unavailable') { super(code) } }
-export type AdminContext = { project?: string; uid?: string; app?: boolean; claims?: Record<string, unknown> }
+export type AdminContext = { project?: string; uid?: string; app?: boolean; role?: 'admin'|'master' }
 export function requireAdmin(context: AdminContext) {
- if (context.project !== 'yingyangtest' || !context.uid || !context.app || context.claims?.stagingTester !== true || context.claims.stagingAdmin !== true) throw new AdminError('permission-denied')
+ if (context.project !== 'yingyangtest' || !context.uid || !context.app || !['admin','master'].includes(context.role||'')) throw new AdminError('permission-denied')
 }
 const idPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/
 const errors = new Set(['', 'mock-failed', 'before-send-failed', 'outcome-unknown'])

@@ -5,11 +5,11 @@ export function allowedStage(projectId: string | undefined, tester: unknown): bo
 export function isEmptyStatusInput(data: unknown): boolean {
  return data !== null && typeof data === 'object' && !Array.isArray(data) && Object.keys(data).length === 0
 }
-export function createLocalLimiter() {
+export function createLocalLimiter(limit = 5) {
  let windowStart = 0, count = 0
  return (now: number) => {
   if (now - windowStart >= 60_000) { windowStart = now; count = 0 }
-  if (count >= 5) return false
+  if (count >= limit) return false
   count += 1
   return true
  }
