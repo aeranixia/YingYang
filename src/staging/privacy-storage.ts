@@ -1,5 +1,6 @@
 import { fresh, key, restore, type Session } from '../engine'
 export const retentionMs = 7 * 86400000
+export const receiptClockToleranceMs = 60_000
 export const privacyVersion = 'staging-clinic-privacy-2'
 export const privacyKey = 'yingyang:staging:privacy'
 export const metadataKey = 'yingyang:staging:retention'
@@ -19,7 +20,7 @@ function metadata(): Metadata { const data = read<Metadata>(metadataKey); return
 function validEntry(entry: Entry | undefined, now: number): entry is Entry { return !!entry && Number.isSafeInteger(entry.savedAt) && entry.savedAt > 0 && entry.savedAt <= now }
 export function privacy(now = Date.now()): Consent | null {
  const data = read<Consent>(privacyKey)
- return data?.version === privacyVersion && data.epoch === epoch() && typeof data.proof === 'string' && Number.isSafeInteger(data.at) && data.at <= now && Number.isSafeInteger(data.expires) && data.expires > now && data.expires <= data.at + retentionMs ? data : null
+ return data?.version === privacyVersion && data.epoch === epoch() && typeof data.proof === 'string' && Number.isSafeInteger(data.at) && data.at <= now + receiptClockToleranceMs && Number.isSafeInteger(data.expires) && data.expires > now && data.expires <= data.at + retentionMs ? data : null
 }
 export function requirePrivacy(expectedEpoch = epoch()) {
  const data = privacy()
@@ -48,7 +49,7 @@ export function deleteAll() {
  for (const name of [key('acquired'), key('innate'), proofKey, privacyKey, metadataKey]) localStorage.removeItem(name)
 }
 export function acceptPrivacy(receipt: PrivacyReceipt, expectedEpoch: string, migrate: boolean, now = Date.now()) {
- if (epoch() !== expectedEpoch || typeof receipt.proof !== 'string' || !receipt.proof || receipt.proof.length > 2048 || !Number.isSafeInteger(receipt.at) || !Number.isSafeInteger(receipt.expires) || receipt.expires <= now || receipt.at > now || receipt.expires > receipt.at + retentionMs) throw Error('Stale consent')
+ if (epoch() !== expectedEpoch || typeof receipt.proof !== 'string' || !receipt.proof || receipt.proof.length > 2048 || !Number.isSafeInteger(receipt.at) || !Number.isSafeInteger(receipt.expires) || receipt.expires <= now || receipt.at > now + receiptClockToleranceMs || receipt.expires > receipt.at + retentionMs) throw Error('Stale consent')
  const meta = metadata()
  if (hasLegacy(now) && !migrate) throw Error('Migration choice required')
  if (migrate) for (const kind of kinds) if (localStorage.getItem(key(kind)) !== null && !validEntry(meta.exams[kind], now)) meta.exams[kind] = { savedAt: now }

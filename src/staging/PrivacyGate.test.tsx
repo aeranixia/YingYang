@@ -8,6 +8,20 @@ const callbacks=()=>({authorize:vi.fn(async()=>receipt()),verify:vi.fn(async()=>
 beforeEach(()=>{localStorage.clear();vi.spyOn(window,'scrollTo').mockImplementation(()=>{})})
 afterEach(()=>{cleanup();vi.restoreAllMocks()})
 function agree(){for(const box of screen.getAllByRole('checkbox'))fireEvent.click(box)}
+it('server receipt slightly ahead of browser reaches exam card and first question',async()=>{
+ const props=callbacks();props.authorize.mockImplementation(async()=>{const at=Date.now()+1000;return {proof:'ahead',at,expires:at+retentionMs}})
+ render(<PrivacyGate {...props}/>);await screen.findByRole('heading',{name:'검사 시작 전 안내와 동의'});agree()
+ fireEvent.click(screen.getByRole('button',{name:'동의하고 검사 시작·이어하기'}));await screen.findByLabelText('검진 선택')
+ fireEvent.click(screen.getAllByRole('button',{name:/시작하기/})[0]);await screen.findByText('문항 1 / 10')
+})
+it('callable rejection shows safe stage/code and restores button for retry without clearing checks',async()=>{
+ const props=callbacks();props.authorize.mockRejectedValueOnce({code:'functions/permission-denied',message:'private-token-never-show'})
+ render(<PrivacyGate {...props}/>);await screen.findByRole('heading',{name:'검사 시작 전 안내와 동의'});agree()
+ const start=screen.getByRole('button',{name:'동의하고 검사 시작·이어하기'}) as HTMLButtonElement
+ fireEvent.click(start);await screen.findByText(/서버 동의 요청: functions\/permission-denied/)
+ expect(start.disabled).toBe(false);expect(screen.queryByText(/private-token-never-show/)).toBeNull()
+ fireEvent.click(start);await screen.findByLabelText('검진 선택')
+})
 it('separate pre-exam consent gates start and no responses sent before user accepts',async()=>{
  const props=callbacks();render(<PrivacyGate {...props}/>)
  await screen.findByRole('heading',{name:'검사 시작 전 안내와 동의'})

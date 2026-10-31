@@ -12,10 +12,15 @@ type Props = {
  confirm: Parameters<typeof confirmPending>[1]
  send: (input: Submission) => Promise<MockReceipt>
 }
+function failureCode(error: unknown) {
+ const code = error && typeof error === 'object' && 'code' in error ? error.code : ''
+ return typeof code === 'string' && /^(functions|auth|appCheck)\/[a-z-]{1,40}$/.test(code) ? code : 'local-state-or-connection'
+}
 export function PrivacyGate({ authorize, verify, confirm, send }: Props) {
  const [ready, setReady] = useState(false), [checking, setChecking] = useState(true), [busy, setBusy] = useState(false)
  const [personal, setPersonal] = useState(false), [sensitive, setSensitive] = useState(false), [legacy, setLegacy] = useState(false)
  const verifiedProof = useRef(''), observedEpoch = useRef(epoch()), authorized = useRef(false)
+ const consentRevision = useRef(0), accepting = useRef(false)
  const dialogRef = useRef<HTMLDivElement>(null)
  const [message, setMessage] = useState(''), [revision, setRevision] = useState(0), [removal, setRemoval] = useState(false)
  useEffect(() => {
@@ -35,6 +40,8 @@ export function PrivacyGate({ authorize, verify, confirm, send }: Props) {
  useEffect(() => {
   let live = true
   async function check(initial = false, external = false) {
+   if (accepting.current && !external) return
+   const checkRevision = consentRevision.current
    try {
     ensureEpoch()
     const expired = expire(), changedEpoch = !!observedEpoch.current && observedEpoch.current !== epoch(), old = hasLegacy(), consent = privacy(); observedEpoch.current = epoch()
@@ -49,11 +56,12 @@ export function PrivacyGate({ authorize, verify, confirm, send }: Props) {
      setReady(false); setChecking(true)
      const current = epoch()
      await verify(consent.proof)
+     if (checkRevision !== consentRevision.current) return
      if (live && epoch() === current && privacy()?.proof === consent.proof && !hasLegacy()) { verifiedProof.current = consent.proof; authorized.current = true; setReady(true) }
     }
     if (live && verifiedProof.current === consent.proof && privacy()?.proof === consent.proof && !hasLegacy()) setReady(true)
     if (live) setChecking(false)
-   } catch { if (live) { setReady(false); setChecking(false); setMessage('동의·저장 상태를 확인하지 못했습니다. 다시 동의하거나 브라우저 저장 설정을 확인해 주세요.') } }
+   } catch (error) { if (live && checkRevision === consentRevision.current) { setReady(false); setChecking(false); setMessage(`동의·저장 상태를 확인하지 못했습니다. 다시 동의하거나 브라우저 저장 설정을 확인해 주세요. [증명 확인: ${failureCode(error)}]`) } }
   }
   void check(true)
   const timer = window.setInterval(() => void check(), 1000)
@@ -63,17 +71,21 @@ export function PrivacyGate({ authorize, verify, confirm, send }: Props) {
   return () => { live = false; clearInterval(timer); document.removeEventListener('visibilitychange', visible); window.removeEventListener('storage', storage) }
  }, [verify])
  async function accept(migrate: boolean) {
-  if (!personal || !sensitive || busy) return
+  if (!personal || !sensitive || accepting.current) return
+  accepting.current = true; consentRevision.current += 1
   setBusy(true); setMessage('')
+  let stage = '서버 동의 요청'
   try {
    const current = ensureEpoch(), receipt = await authorize()
+   stage = '브라우저 동의 저장'
    acceptPrivacy(receipt, current, migrate); verifiedProof.current = receipt.proof; authorized.current = true
    setLegacy(false); setReady(true); setRevision(v => v + 1)
    setMessage(migrate ? '기존 자료를 명시적으로 이전했습니다. 저장일을 알 수 없는 검사는 지금부터 7일로 계산합니다. 이전 완료 시각은 새로 만들지 않습니다.' : 'Staging 검토용 동의를 확인했습니다.')
-  } catch { setMessage('동의를 확인하지 못했습니다. 삭제·다른 탭 변경 또는 연결 상태를 확인하고 다시 시도해 주세요.') }
-  finally { setBusy(false) }
+  } catch (error) { setMessage(`동의를 확인하지 못했습니다. 삭제·다른 탭 변경 또는 연결 상태를 확인하고 다시 시도해 주세요. [${stage}: ${failureCode(error)}]`) }
+  finally { accepting.current = false; setBusy(false); setChecking(false) }
  }
  function remove() {
+  consentRevision.current += 1
   try { deleteAll(); setReady(false); setLegacy(false); setPersonal(false); setSensitive(false); setRevision(v => v + 1); setRemoval(false); setMessage('이 브라우저의 검사·완료 증명·임시 동의 기록을 삭제했습니다. 글자 크기는 유지했습니다.') }
   catch { setMessage('일부 자료를 삭제하지 못했습니다. 브라우저 사이트 데이터 설정에서 확인해 주세요.'); setReady(false) }
  }

@@ -4,6 +4,14 @@ import { seedPrivacy } from './test-privacy'
 import { acceptPrivacy, assertStates, deleteAll, ensureEpoch, epoch, expire, hasLegacy, metadataKey, privacy, privacyKey, proofKey, retentionMs, sessionStore } from './privacy-storage'
 beforeEach(()=>{localStorage.clear();vi.useFakeTimers();vi.setSystemTime(new Date('2026-10-31T00:00:00Z'))})
 afterEach(()=>vi.useRealTimers())
+it('small server clock lead accepts receipt without extending expiry; large lead is rejected',()=>{
+ const current=ensureEpoch(),at=Date.now()+1000,expires=at+retentionMs
+ acceptPrivacy({proof:'server-clock',at,expires},current,false)
+ expect(privacy()?.expires).toBe(expires)
+ expect(sessionStore(current).read('acquired').kind).toBe('acquired')
+ expect(()=>acceptPrivacy({proof:'future',at:Date.now()+60001,expires:Date.now()+60001+retentionMs},current,false)).toThrow()
+ vi.setSystemTime(expires);expect(privacy()).toBeNull()
+})
 it('legacy data untouched until explicit adoption; migration uses current time without forging completion',()=>{
  const raw=JSON.stringify({...fresh('acquired'),answers:Array(10).fill(2),completed:true})
  localStorage.setItem(key('acquired'),raw);localStorage.setItem(proofKey,'old-proof')
