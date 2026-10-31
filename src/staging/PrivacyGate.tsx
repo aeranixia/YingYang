@@ -36,7 +36,7 @@ export function PrivacyGate({ authorize, verify, confirm, send }: Props) {
   async function check(initial = false, external = false) {
    try {
     ensureEpoch()
-    const expired = expire(), changedEpoch = observedEpoch.current !== epoch(), old = hasLegacy(), consent = privacy(); observedEpoch.current = epoch()
+    const expired = expire(), changedEpoch = !!observedEpoch.current && observedEpoch.current !== epoch(), old = hasLegacy(), consent = privacy(); observedEpoch.current = epoch()
     if (!live) return
     setLegacy(old)
     if (expired || external || changedEpoch) { setRevision(v => v + 1); setMessage(expired ? '7일이 지난 검사와 관련 완료 증명을 삭제했습니다. 다른 유효 검사는 유지됩니다.' : '다른 탭의 검사 변경을 반영했습니다.') }

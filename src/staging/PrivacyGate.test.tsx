@@ -11,6 +11,7 @@ function agree(){for(const box of screen.getAllByRole('checkbox'))fireEvent.clic
 it('separate pre-exam consent gates start and no responses sent before user accepts',async()=>{
  const props=callbacks();render(<PrivacyGate {...props}/>)
  await screen.findByRole('heading',{name:'검사 시작 전 안내와 동의'})
+ expect(screen.queryByText('다른 탭의 검사 변경을 반영했습니다.')).toBeNull()
  const start=screen.getByRole('button',{name:'동의하고 검사 시작·이어하기'}) as HTMLButtonElement
  expect(start.disabled).toBe(true);fireEvent.click(screen.getAllByRole('checkbox')[0]);expect(start.disabled).toBe(true)
  expect(props.authorize).not.toHaveBeenCalled();expect(props.confirm).not.toHaveBeenCalled();expect(screen.queryByLabelText('검진 선택')).toBeNull()
