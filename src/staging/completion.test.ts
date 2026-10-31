@@ -1,8 +1,9 @@
-﻿import { beforeEach, expect, it, vi } from 'vitest'
+import { beforeEach, expect, it, vi } from 'vitest'
+import { seedPrivacy } from './test-privacy'
 import { fresh } from '../engine'
 import { completionKey, completionProof, confirmPending, markCompletion } from './completion'
 const states = () => ({ acquired: { ...fresh('acquired'), completed: true, answers: Array(10).fill(1) }, innate: { ...fresh('innate'), completed: true, answers: Array(40).fill(2) } })
-beforeEach(() => localStorage.clear())
+beforeEach(() => { localStorage.clear(); seedPrivacy(states()) })
 it('legacy data stays unknown; final completion persists proof across reload and font changes', async () => {
  const data=states(),confirm=vi.fn(async()=>({proof:'signed-server-proof'}))
  await confirmPending(data,confirm);expect(confirm).not.toHaveBeenCalled()

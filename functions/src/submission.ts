@@ -7,8 +7,10 @@ const exact = (value: unknown, keys: string[]): value is Record<string, unknown>
 export function validateSubmission(raw: unknown, expectedConsentVersion = consentVersion): Submission {
  const fields = ['requestId', 'version', 'name', 'phone', 'acquired', 'innate', 'consent', 'scenario']
  if (raw && typeof raw === 'object' && Object.hasOwn(raw, 'completionProof')) fields.push('completionProof')
+ if (raw && typeof raw === 'object' && Object.hasOwn(raw, 'privacyProof')) fields.push('privacyProof')
  if (!exact(raw, fields)) throw new InputError('Invalid fields')
  if ('completionProof' in raw && (typeof raw.completionProof !== 'string' || raw.completionProof.length > 1024)) throw new InputError('Invalid completion proof')
+ if ('privacyProof' in raw && (typeof raw.privacyProof !== 'string' || raw.privacyProof.length > 2048)) throw new InputError('Invalid privacy proof')
  if (typeof raw.requestId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(raw.requestId)) throw new InputError('Invalid request id')
  if (raw.version !== VERSION || typeof raw.name !== 'string' || !syntheticNames.some(n => n === raw.name) || typeof raw.phone !== 'string' || !syntheticPhones.some(p => p === raw.phone)) throw new InputError('Use approved synthetic identity')
  if (!exact(raw.consent, ['personal', 'sensitive', 'synthetic', 'version']) || raw.consent.personal !== true || raw.consent.sensitive !== true || raw.consent.synthetic !== true || raw.consent.version !== expectedConsentVersion) throw new InputError('Consent required')

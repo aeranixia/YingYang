@@ -12,7 +12,7 @@ export class LiveError extends Error {
 }
 export const DAILY_MAIL_ATTEMPT_LIMIT = 50
 const digest = (value: string, key: string) => createHmac('sha256', key).update(value).digest('hex')
-const canonical = (input: Submission) => JSON.stringify([input.requestId,input.version,input.name,input.phone,input.acquired,input.innate,[input.consent.personal,input.consent.sensitive,input.consent.synthetic,input.consent.version],input.scenario,input.completionProof ?? null])
+const canonical = (input: Submission) => JSON.stringify([input.requestId,input.version,input.name,input.phone,input.acquired,input.innate,[input.consent.personal,input.consent.sensitive,input.consent.synthetic,input.consent.version],input.scenario,input.completionProof ?? null,input.privacyProof ?? null])
 type Ticket = { operation: string; requestId: string; scope: string; expires: number }
 type RecordState = { digest: string; state: 'preparing' | 'failed' | 'sending' | 'sent' | 'unknown'; attempts: number; leaseUntil: number; expires: number }
 function scope(input: Submission, uid: string, config: MailConfig, key: string) { return digest(JSON.stringify([canonical(input),uid,config.sender,config.recipient]), key) }

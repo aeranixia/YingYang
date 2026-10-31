@@ -3,7 +3,7 @@ import type { Session } from '../engine'
 import { consentVersion, syntheticNames, syntheticPhones, type MockReceipt, type Submission, type MockScenario } from './contracts'
 import { completionProof, confirmPending } from './completion'
 
-export function SubmissionForm({ states, send, confirm }: { states: { acquired: Session; innate: Session }; send: (input: Submission) => Promise<MockReceipt>; confirm?: Parameters<typeof confirmPending>[1] }) {
+export function SubmissionForm({ states, send, confirm, guard }: { states: { acquired: Session; innate: Session }; send: (input: Submission) => Promise<MockReceipt>; confirm?: Parameters<typeof confirmPending>[1]; guard?: () => string }) {
  const [completionStatus, setCompletionStatus] = useState('')
  async function checkCompletion() {
   if (!confirm) return
@@ -23,9 +23,11 @@ export function SubmissionForm({ states, send, confirm }: { states: { acquired: 
   if (locked.current || status === 'success' || !valid) return
   locked.current = true; setStatus('sending'); setMessage('PDF 생성과 모의 처리를 진행 중입니다. 실제 이메일은 발송하지 않습니다.')
   try {
+   guard?.()
    if (confirm) await confirmPending(states, confirm)
+   const privacyProof = guard?.()
    const proof = completionProof(states)
-   const data = { ...(proof ? { completionProof: proof } : {}), version: states.acquired.version, name: name.trim(), phone: phone.replaceAll('-', ''), acquired: states.acquired.answers as number[], innate: states.innate.answers as number[], consent: { personal, sensitive, synthetic, version: consentVersion }, scenario }
+   const data = { ...(privacyProof ? { privacyProof } : {}), ...(proof ? { completionProof: proof } : {}), version: states.acquired.version, name: name.trim(), phone: phone.replaceAll('-', ''), acquired: states.acquired.answers as number[], innate: states.innate.answers as number[], consent: { personal, sensitive, synthetic, version: consentVersion }, scenario }
    const signature = JSON.stringify(data)
    if (request.current.signature !== signature) request.current = { id: crypto.randomUUID(), signature }
    const result = await send({ ...data, requestId: request.current.id })

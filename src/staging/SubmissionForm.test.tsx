@@ -4,6 +4,7 @@ import App from '../App'
 import { fresh, key, type Session } from '../engine'
 import { SubmissionForm } from './SubmissionForm'
 import type { Submission } from './contracts'
+import { seedPrivacy } from './test-privacy'
 import { completionKey, markCompletion } from './completion'
 beforeEach(() => { localStorage.clear(); vi.spyOn(window, 'scrollTo').mockImplementation(() => {}) })
 afterEach(() => { cleanup(); vi.restoreAllMocks() })
@@ -78,8 +79,9 @@ it('final exam completion requests server confirmation and retaking clears it wi
  const data=states();data.innate.completed=false;data.innate.current=39
  for(const kind of ['acquired','innate'] as const)localStorage.setItem(key(kind),JSON.stringify(data[kind]))
  const confirm=vi.fn(async()=>({proof:'test-server-proof'})),send=vi.fn(async(input:Submission)=>({status:'mock-completed' as const,requestId:input.requestId,duplicate:false}))
+ const store=seedPrivacy(data)
  const changed=vi.fn(markCompletion)
- render(<App onSessionsChange={changed} submission={s=><SubmissionForm states={s} send={send} confirm={confirm}/>}/>)
+ render(<App sessionStore={store} onSessionsChange={changed} submission={s=><SubmissionForm states={s} send={send} confirm={confirm}/>}/>)
  fireEvent.click(screen.getByRole('button',{name:'이어하기'}))
  fireEvent.click(screen.getByRole('button',{name:'검진 완료'}))
  await waitFor(()=>expect(confirm).toHaveBeenCalledTimes(1))

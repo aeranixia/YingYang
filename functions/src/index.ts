@@ -8,6 +8,7 @@ import { GcsStateStore } from './mail-state'
 import { readMailSecret, validateMailConfig, refreshGmailToken, dispatchGmail } from './gmail-sender'
 import { prepareMailTicket, createLiveService, LiveError, DAILY_MAIL_ATTEMPT_LIMIT } from './live-service'
 import { confirmCompletion } from './completion'
+import { issuePrivacy, verifyPrivacy } from './privacy'
 
 const signingKey = defineSecret('STAGING_REQUEST_SIGNING_KEY')
 const allowLocalRequest = createLocalLimiter()
@@ -28,7 +29,15 @@ export const stagingStatus = onCall(callableOptions, request => {
   if (!allowLocalRequest(Date.now())) throw new HttpsError('resource-exhausted', '잠시 후 다시 확인해 주세요.')
   const key = signingKey.value()
   if (key.length < 32) throw new HttpsError('failed-precondition', '서버 설정을 확인해 주세요.')
-  try { return confirmCompletion(request.data, request.auth.uid, key) }
+  try {
+   if (request.data?.action === 'consent-privacy') return issuePrivacy(request.data, request.auth.uid, key)
+   if (request.data?.action === 'verify-privacy') {
+    if (Object.keys(request.data).sort().join(',') !== 'action,privacyProof') throw Error()
+    return { valid: true, ...verifyPrivacy(request.data.privacyProof, request.auth.uid, key) }
+   }
+   verifyPrivacy(request.data?.privacyProof, request.auth.uid, key)
+   return confirmCompletion(request.data, request.auth.uid, key)
+  }
   catch { throw new HttpsError('invalid-argument', '완료된 검진 응답을 확인해 주세요.') }
  }
  if (!allowLocalRequest(Date.now())) throw new HttpsError('resource-exhausted', '잠시 후 다시 확인해 주세요.')
@@ -54,6 +63,8 @@ const liveHandler = (prepare: boolean) => onCall(callableOptions, async request 
   setupStage = 'ticket-or-submission'
   const key = signingKey.value()
   if (key.length < 32) throw new Error('Invalid signing configuration')
+  const input = prepare ? request.data : request.data?.submission
+  verifyPrivacy(input?.privacyProof, request.auth.uid, key)
   return prepare ? prepareMailTicket(request.data,request.auth.uid,config,key) : await liveService(request.data,request.auth.uid,config,key)
  } catch(error) {
   if (error instanceof InputError) throw new HttpsError('invalid-argument', '지정 가상 정보와 동의를 확인해 주세요.')
@@ -74,6 +85,8 @@ export const submitMockReport = onCall(callableOptions, async request => {
  if (!allowSubmission(Date.now())) throw new HttpsError('resource-exhausted', '잠시 후 다시 시도해 주세요.')
  const key = signingKey.value()
  if (key.length < 32) throw new HttpsError('failed-precondition', '테스트 환경 설정을 확인해 주세요.')
+ try { verifyPrivacy(request.data?.privacyProof, request.auth.uid, key) }
+ catch { throw new HttpsError('failed-precondition', '검사 전 개인정보·민감정보 동의를 다시 확인해 주세요.') }
  try { return await processSubmission(request.data, request.auth.uid, key) }
  catch (error) {
   if (error instanceof InputError) throw new HttpsError('invalid-argument', '가상 정보, 동의, 검진 응답을 확인해 주세요.')

@@ -3,6 +3,7 @@ export const syntheticNames = ['가상테스터', '테스트환자'] as const
 export const syntheticPhones = ['01000001234', '01000005678'] as const
 export type MockScenario = 'success' | 'fail-once'
 export type Submission = {
+ privacyProof?: string
  completionProof?: string
  requestId: string
  version: number
