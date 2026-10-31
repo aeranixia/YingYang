@@ -1,4 +1,4 @@
-﻿import { afterEach, expect, it, vi } from 'vitest'
+import { afterEach, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { AdminReports } from './AdminReports'
 import type { AdminPage } from './admin-contracts'
@@ -14,7 +14,15 @@ it('masked history distinguishes mock from email receipt and sends filters witho
 })
 it('permission failures show only safe code; failed downloads can be retried',async()=>{
  const list=vi.fn(async()=>({reports:[row]})),download=vi.fn().mockRejectedValue({code:'functions/failed-precondition',message:'private-original-name'})
- render(<AdminReports list={list} download={download}/>);fireEvent.click(await screen.findByRole('button',{name:'실패 PDF 다운로드'}))
+ render(<AdminReports list={list} download={download}/>);fireEvent.click(await screen.findByRole('button',{name:/실패 PDF 다운로드/}))
  await screen.findByText(/functions\/failed-precondition/);expect(screen.queryByText(/private-original-name/)).toBeNull()
- expect((screen.getByRole('button',{name:'실패 PDF 다운로드'}) as HTMLButtonElement).disabled).toBe(false)
+ expect((screen.getByRole('button',{name:/실패 PDF 다운로드/}) as HTMLButtonElement).disabled).toBe(false)
+})
+
+it('expired PDF is marked and cannot be downloaded even if stale availability says true',async()=>{
+ const list=vi.fn(async()=>({reports:[{...row,expiresAt:Date.now()-1}]})),download=vi.fn()
+ render(<AdminReports list={list} download={download}/>);await screen.findByText('보관 만료')
+ const button=screen.getByRole('button',{name:/실패 PDF 다운로드/}) as HTMLButtonElement
+ expect(button.disabled).toBe(true);fireEvent.click(button);expect(download).not.toHaveBeenCalled()
+ expect(screen.getByRole('table',{name:'발송 이력'})).toBeTruthy()
 })
