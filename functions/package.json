@@ -2,7 +2,7 @@
   "name": "yingyang-staging-functions",
   "private": true,
   "version": "0.0.0-stage-e",
-  "main": "lib/functions/src/index.js",
+  "main": "lib/functions/src/entry.js",
   "engines": {
     "node": "22"
   },

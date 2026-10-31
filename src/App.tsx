@@ -13,7 +13,7 @@ function Result({ state }: { state: Session }) {
 function CompletedResult({ state }: { state: Session }) {
  return <details className="completed-result"><summary>{state.kind === 'acquired' ? '후천적' : '타고난'} 체질 결과 보기</summary><div className="panel"><Result state={state}/></div></details>
 }
-export default function App({ submission, onSessionsChange, sessionStore }: { submission?: (states: Record<Kind, Session>) => ReactNode; onSessionsChange?: (states: Record<Kind, Session>, newlyCompleted: boolean) => void; sessionStore?: { read: (kind: Kind) => Session; save: (state: Session) => void } } = {}) {
+export default function App({ submission, onSessionsChange, sessionStore, edition }: { edition?: string; submission?: (states: Record<Kind, Session>) => ReactNode; onSessionsChange?: (states: Record<Kind, Session>, newlyCompleted: boolean) => void; sessionStore?: { read: (kind: Kind) => Session; save: (state: Session) => void } } = {}) {
  const [states, setStates] = useState<Record<Kind, Session>>(() => ({ acquired: (sessionStore?.read || read)('acquired'), innate: (sessionStore?.read || read)('innate') }))
  const [view, setView] = useState<View>('home'), [warning, setWarning] = useState('')
  const [review, setReview] = useState(false), [reset, setReset] = useState<Kind | null>(null)
@@ -53,7 +53,7 @@ export default function App({ submission, onSessionsChange, sessionStore }: { su
  const complete = kinds.every(k => states[k].completed)
  const active = view === 'acquired' || view === 'innate' ? states[view] : null
  const otherKind: Kind | null = active ? active.kind === 'acquired' ? 'innate' : 'acquired' : null
- return <div className="shell" data-text-size={textSize}><header><button className="brand" onClick={() => navigate('home')} aria-label="YingYang 홈"><span className="symbol">☯</span> YingYang</button><div className="header-tools"><span className="edition"><span className="edition-context">체질 진단 · </span>{submission ? 'v1.2 개발 · STAGING' : 'v1.1.1'}</span><div className="text-settings" role="group" aria-label="글자 크기"><span>글자 크기</span><div className="text-size-buttons">{textSizes.map(size => <button key={size.value} type="button" aria-label={`글자 크기 ${size.label}`} aria-pressed={textSize === size.value} onClick={() => changeTextSize(size.value)}>{size.label}</button>)}</div></div></div></header><main>
+ return <div className="shell" data-text-size={textSize}><header><button className="brand" onClick={() => navigate('home')} aria-label="YingYang 홈"><span className="symbol">☯</span> YingYang</button><div className="header-tools"><span className="edition"><span className="edition-context">체질 진단 · </span>{edition || (submission ? 'v1.2 개발 · STAGING' : 'v1.1.1')}</span><div className="text-settings" role="group" aria-label="글자 크기"><span>글자 크기</span><div className="text-size-buttons">{textSizes.map(size => <button key={size.value} type="button" aria-label={`글자 크기 ${size.label}`} aria-pressed={textSize === size.value} onClick={() => changeTextSize(size.value)}>{size.label}</button>)}</div></div></div></header><main>
  {sizeWarning && <p role="alert" className="notice">{sizeWarning}</p>}
  {warning && <p role="alert" className="notice">{warning}</p>}
  {view === 'home' ? <><section className="hero"><span className="eyebrow">나를 이해하는 첫걸음</span><h1>나의 체질을 알아보는<br/><em>두 가지 진단</em></h1><p>지금의 나와 타고난 나를 차분히 살펴보세요.<br/>각 진단은 원하는 순서로 진행할 수 있습니다.</p></section><section className="cards" aria-label="검진 선택">{kinds.map((kind, i) => {

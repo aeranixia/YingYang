@@ -8,4 +8,5 @@ dist-staging/
 functions/lib/
 functions/.env*
 !functions/.env.yingyangtest
+!functions/.env.yingyangcheck
 *.secret.local

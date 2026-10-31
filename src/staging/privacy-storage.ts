@@ -1,7 +1,8 @@
 import { fresh, key, restore, type Session } from '../engine'
+import { productionPrivacyVersion } from '../production/contracts'
 export const retentionMs = 7 * 86400000
 export const receiptClockToleranceMs = 60_000
-export const privacyVersion = 'staging-clinic-privacy-5'
+export const privacyVersion = import.meta.env.MODE==='production'?productionPrivacyVersion:'staging-clinic-privacy-5'
 export const privacyKey = 'yingyang:staging:privacy'
 export const metadataKey = 'yingyang:staging:retention'
 export const epochKey = 'yingyang:staging:epoch'

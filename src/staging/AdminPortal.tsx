@@ -13,7 +13,7 @@ function errorCode(error: unknown) {
  const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : ''
  return /^(auth|functions)\/[a-z-]+$/.test(code) ? code : ''
 }
-export function AdminPortal({ auth, functions }: { auth: Auth; functions: Functions }) {
+export function AdminPortal({ auth, functions, environmentLabel='STAGING' }: { auth: Auth; functions: Functions; environmentLabel?:string }) {
  const [session, setSession] = useState(empty), [signed, setSigned] = useState(false), [checking, setChecking] = useState(true)
  const [account, setAccount] = useState(''), [busy, setBusy] = useState(false), [message, setMessage] = useState('')
  const [tab, setTab] = useState<Tab>('reports'), [needsReauth, setNeedsReauth] = useState(false)
@@ -75,7 +75,7 @@ export function AdminPortal({ auth, functions }: { auth: Auth; functions: Functi
  }
  const notice = message && <p className="admin-notice" role="status">{message}</p>
  const logout = <button className="admin-button-secondary" disabled={busy} onClick={() => void run(async () => { await signOut(auth) })}>로그아웃</button>
- const top = <header className="admin-top"><div><span className="admin-kicker">YingYang · STAGING</span><h1>관리자</h1></div>{signed && <div className="admin-account"><div><span className="admin-account-name">{account}</span><span className="admin-role">{session.role === 'master' ? '마스터' : session.role === 'admin' ? '일반 관리자' : '권한 확인'}</span></div>{logout}</div>}</header>
+ const top = <header className="admin-top"><div><span className="admin-kicker">YingYang · {environmentLabel}</span><h1>관리자</h1></div>{signed && <div className="admin-account"><div><span className="admin-account-name">{account}</span><span className="admin-role">{session.role === 'master' ? '마스터' : session.role === 'admin' ? '일반 관리자' : '권한 확인'}</span></div>{logout}</div>}</header>
  if (checking) return <div className="admin-app">{top}<main className="admin-focus"><p role="status">로그인 상태를 확인하고 있습니다…</p></main></div>
  if (!signed) return <div className="admin-app">{top}<main className="admin-focus"><div className="admin-login"><span className="admin-kicker">관리자 전용</span><h2>로그인</h2><p>승인된 Google 계정으로 로그인하세요.</p>{notice}<button className="admin-google" disabled={busy} onClick={() => void run(async () => { await signInWithPopup(auth, new GoogleAuthProvider()) })}>Google로 로그인</button></div></main></div>
  if (session.role === 'none') return <div className="admin-app">{top}<main className="admin-focus"><div className="admin-login"><h2>관리자 승인 대기</h2><p>현재 계정은 승인된 관리자가 아닙니다. 마스터에게 승인을 요청하세요.</p>{notice}<button disabled={busy} onClick={() => void run(async () => setSession(await call<Session>({ action: 'session' })))}>승인 상태 새로고침</button></div></main></div>

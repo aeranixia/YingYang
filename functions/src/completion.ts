@@ -2,15 +2,15 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 import { fresh, isComplete } from '../../src/engine'
 import type { Submission } from '../../src/staging/contracts'
 import { InputError } from './submission'
-import { verifyPrivacy } from './privacy'
+import { verifyPrivacy, privacyVersion } from './privacy'
 
 const sign = (text: string, key: string) => createHmac('sha256', key).update(text).digest('hex')
 type Answers = Pick<Submission, 'acquired' | 'innate'>
 const scope = (data: Answers, uid: string, key: string) => sign(JSON.stringify([uid, data.acquired, data.innate]), key)
-export function confirmCompletion(raw: unknown, uid: string, key: string, now = Date.now()) {
+export function confirmCompletion(raw: unknown, uid: string, key: string, now = Date.now(), expectedPrivacyVersion = privacyVersion) {
  const data = raw as Answers & { action: string; nonce: string; privacyProof: string; expires: number }
  if (!data || Object.keys(data).sort().join(',') !== 'acquired,action,expires,innate,nonce,privacyProof' || data.action !== 'confirm-completion' || typeof data.nonce !== 'string' || !/^[a-f0-9-]{36}$/.test(data.nonce)) throw new InputError('Invalid completion')
- const consent = verifyPrivacy(data.privacyProof, uid, key, now)
+ const consent = verifyPrivacy(data.privacyProof, uid, key, now, expectedPrivacyVersion)
  if (!Number.isSafeInteger(data.expires) || data.expires <= now || data.expires > consent.expires) throw new InputError('Expired retention')
  for (const kind of ['acquired', 'innate'] as const) {
   if (!Array.isArray(data[kind]) || Array.from(data[kind]).some(value => !Number.isInteger(value)) || !isComplete({ ...fresh(kind), answers: data[kind] })) throw new InputError('Incomplete answers')

@@ -15,8 +15,8 @@ function gmail(value:unknown):string { if(typeof value!=='string'||value.length>
 function body(raw:unknown,keys:string[]) { if(!raw||typeof raw!=='object'||Array.isArray(raw)||Object.keys(raw).sort().join(',')!==keys.sort().join(','))throw new IdentityError('invalid-argument');return raw as Record<string,unknown> }
 const memberKey=(email:string)=>'members/'+createHash('sha256').update(email).digest('hex')+'.json'
 export class AdminIdentity {
- constructor(private store:IdentityStore,private adapter:IdentityAdapter,private key:string,private clock=Date.now){}
- private gate(c:IdentityContext){if(c.project!=='yingyangtest'||!c.app)throw new IdentityError('permission-denied')}
+ constructor(private store:IdentityStore,private adapter:IdentityAdapter,private key:string,private clock=Date.now,private project='yingyangtest'){if(!['yingyangtest','yingyangcheck'].includes(project))throw Error('Invalid project')}
+ private gate(c:IdentityContext){if(c.project!==this.project||!c.app)throw new IdentityError('permission-denied')}
  private async config(){const r=await this.store.read('config.json'),v=r?.value as Config;if(!r||!v?.googleEmail)throw new IdentityError('unavailable');return {value:v,generation:r.generation}}
  private async audit(c:IdentityContext,action:string,outcome:string,email?:string){await this.store.write('audit/'+randomUUID()+'.json',{at:this.clock(),actor:c.uid?createHmac('sha256',this.key).update(c.uid).digest('hex'):'anonymous',action,outcome,...(email?{subject:createHmac('sha256',this.key).update(email).digest('hex')}:{})},'0')}
  private recent(c:IdentityContext){if(!Number.isSafeInteger(c.authTime)||this.clock()-c.authTime!*1000>300000||c.authTime!*1000>this.clock()+60000)throw new IdentityError('failed-precondition')}
@@ -53,10 +53,10 @@ export class AdminIdentity {
  }
 }
 export class GcsIdentityStore implements IdentityStore {
- constructor(private token=runtimeToken){}
- private url(name:string){if(!/^(config\.json|members\/[a-f0-9]{64}\.json|audit\/[a-f0-9-]+\.json)$/.test(name))throw Error('Invalid identity path');return 'https://storage.googleapis.com/storage/v1/b/'+identityBucket+'/o/'+encodeURIComponent(name)}
+ constructor(private token=runtimeToken,private bucket=identityBucket){if(![identityBucket,'yingyangcheck-admin-identity-231582543863'].includes(bucket))throw Error('Invalid identity bucket')}
+ private url(name:string){if(!/^(config\.json|members\/[a-f0-9]{64}\.json|audit\/[a-f0-9-]+\.json)$/.test(name))throw Error('Invalid identity path');return 'https://storage.googleapis.com/storage/v1/b/'+this.bucket+'/o/'+encodeURIComponent(name)}
  private async request(url:string,init:RequestInit={}){return fetch(url,{...init,headers:{authorization:'Bearer '+await this.token(),...init.headers},signal:AbortSignal.timeout(8000)})}
  async read(name:string){const r=await this.request(this.url(name)+'?alt=media');if(r.status===404)return null;if(!r.ok)throw Error('Identity read unavailable');const generation=r.headers.get('x-goog-generation');if(!generation)throw Error('Missing identity version');return {value:await r.json(),generation}}
- async write(name:string,value:unknown,generation:string){this.url(name);const r=await this.request('https://storage.googleapis.com/upload/storage/v1/b/'+identityBucket+'/o?uploadType=media&name='+encodeURIComponent(name)+'&ifGenerationMatch='+generation,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(value)});if(r.status===412)throw new IdentityConflict();if(!r.ok)throw Error('Identity write unavailable');await r.arrayBuffer()}
- async list(prefix:string){if(prefix!=='members/')throw Error('Invalid identity prefix');const r=await this.request('https://storage.googleapis.com/storage/v1/b/'+identityBucket+'/o?prefix=members%2F&maxResults=100');if(!r.ok)throw Error('Identity list unavailable');const b=await r.json() as {items?:{name:string}[];nextPageToken?:string};if(b.nextPageToken)throw new IdentityError('resource-exhausted');const values=[];for(const x of b.items||[]){const v=await this.read(x.name);if(v)values.push(v.value)}return values}
+ async write(name:string,value:unknown,generation:string){this.url(name);const r=await this.request('https://storage.googleapis.com/upload/storage/v1/b/'+this.bucket+'/o?uploadType=media&name='+encodeURIComponent(name)+'&ifGenerationMatch='+generation,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(value)});if(r.status===412)throw new IdentityConflict();if(!r.ok)throw Error('Identity write unavailable');await r.arrayBuffer()}
+ async list(prefix:string){if(prefix!=='members/')throw Error('Invalid identity prefix');const r=await this.request('https://storage.googleapis.com/storage/v1/b/'+this.bucket+'/o?prefix=members%2F&maxResults=100');if(!r.ok)throw Error('Identity list unavailable');const b=await r.json() as {items?:{name:string}[];nextPageToken?:string};if(b.nextPageToken)throw new IdentityError('resource-exhausted');const values=[];for(const x of b.items||[]){const v=await this.read(x.name);if(v)values.push(v.value)}return values}
 }

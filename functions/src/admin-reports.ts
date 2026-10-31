@@ -15,8 +15,9 @@ export interface ArchiveStore {
 export class ArchiveConflict extends Error {}
 export class AdminError extends Error { constructor(public readonly code: 'permission-denied' | 'invalid-argument' | 'not-found' | 'failed-precondition' | 'unavailable') { super(code) } }
 export type AdminContext = { project?: string; uid?: string; app?: boolean; role?: 'admin'|'master' }
-export function requireAdmin(context: AdminContext) {
- if (context.project !== 'yingyangtest' || !context.uid || !context.app || !['admin','master'].includes(context.role||'')) throw new AdminError('permission-denied')
+export function requireAdmin(context: AdminContext, project='yingyangtest') {
+ if (!['yingyangtest','yingyangcheck'].includes(project)) throw new AdminError('permission-denied')
+ if (context.project !== project || !context.uid || !context.app || !['admin','master'].includes(context.role||'')) throw new AdminError('permission-denied')
 }
 const idPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/
 const errors = new Set(['', 'mock-failed', 'before-send-failed', 'outcome-unknown'])
@@ -44,7 +45,7 @@ export interface DeliveryArchive {
  update(id: string, status: AdminReport['status'], errorCode?: string): Promise<void>
 }
 export class ReportArchive implements DeliveryArchive {
- constructor(private store: ArchiveStore, private clock = Date.now) {}
+ constructor(private store: ArchiveStore, private clock = Date.now,private project='yingyangtest') {if(!['yingyangtest','yingyangcheck'].includes(project))throw Error('Invalid archive project')}
  private async report(id: string) {
   if (!idPattern.test(id)) throw new AdminError('invalid-argument')
   const value = await this.store.read('logs/' + id + '.json')
@@ -84,7 +85,7 @@ export class ReportArchive implements DeliveryArchive {
   await this.store.write('access/'+randomUUID()+'.json',Buffer.from(JSON.stringify(record)),'application/json','0')
  }
  async page(raw: unknown, context: AdminContext, key: string): Promise<AdminPage> {
-  requireAdmin(context); const query = queryInput(raw), now = this.clock()
+  requireAdmin(context,this.project); const query = queryInput(raw), now = this.clock()
   const page = await this.store.list('logs/',query.cursor), reports: AdminReport[] = []
   for (const name of page.names) {
    const id = name.replace(/^logs\//,'').replace(/\.json$/,'')
@@ -100,7 +101,7 @@ export class ReportArchive implements DeliveryArchive {
   return {reports:reports.sort((a,b)=>b.updatedAt-a.updatedAt),...(page.nextCursor?{nextCursor:page.nextCursor}:{})}
  }
  async download(raw: unknown, context: AdminContext, key: string) {
-  requireAdmin(context)
+  requireAdmin(context,this.project)
   if (!raw || typeof raw !== 'object' || Array.isArray(raw) || Object.keys(raw).join(',')!=='id' || !idPattern.test((raw as {id:string}).id)) throw new AdminError('invalid-argument')
   const id = (raw as {id:string}).id, item = await this.report(id)
   if (!item) { await this.audit(context,key,'download','not-found',id); throw new AdminError('not-found') }
@@ -118,7 +119,7 @@ export class ReportArchive implements DeliveryArchive {
  }
 }
 export class GcsArchiveStore implements ArchiveStore {
- constructor(private bucket = adminBucket, private token = runtimeToken) { if (bucket!==adminBucket) throw Error('Staging archive only') }
+ constructor(private bucket = adminBucket, private token = runtimeToken, project='yingyangtest') { if (bucket!==(project==='yingyangcheck'?'yingyangcheck-admin-reports-231582543863':adminBucket)) throw Error('Staging archive only') }
  private async request(url: string, options: RequestInit = {}) { return fetch(url,{...options,headers:{authorization:'Bearer '+await this.token(),...options.headers},signal:AbortSignal.timeout(8000)}) }
  private object(name: string) { if (!/^(logs\/[a-f0-9-]+\.json|pdf\/[a-f0-9-]+\.pdf|access\/[a-f0-9-]+\.json)$/.test(name)) throw Error('Invalid archive path'); return 'https://storage.googleapis.com/storage/v1/b/'+this.bucket+'/o/'+encodeURIComponent(name) }
  async read(name: string) {

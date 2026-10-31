@@ -1,0 +1,1 @@
+export default {"apiKey":"AIzaSyDVIz11nFFOUaaFD1USTQT6q7Y-TbpxvYI","authDomain":"yingyangcheck.firebaseapp.com","projectId":"yingyangcheck","appId":"1:231582543863:web:24c538d73fa879c45d88f2","recaptchaSiteKey":"6LeFYAouAAAAAJyBUl3srfuLtpWnUujAKG614m_e"} as const
