@@ -1,5 +1,13 @@
 # YingYang v1 검증 기록
 
+## 한의원 운영 결정·Chrome 원인 조사 — 2026-10-31
+
+- 정책/체크리스트/운영 매뉴얼을 한의원 운영·내부 접수 중심으로 갱신. 독립 서비스 운영은 최종 권장안에서 제외. 정식 사업자명·보호책임/문의처·개발/운영 지원 위탁 계약은 미확정 유지.
+- [Chrome 조사 결과](app-check-chrome-investigation.md): 로그인 없이 Chrome156 자동화 첫 교환403/PERMISSION_DENIED/attestation 실패, 연속 WebKit27.2 교환200. 각1회, 검사·메일 없음.
+- 기존 설정에서 프런트/등록 키 일치, 허용 도메인/점수형 키·TTL3600·minValidScore0.5 확인. 토큰/키 값 기록 없음. 과거 집계는 이번 실패 일자/개별 점수를 포함하지 않아 낮은 점수 원인은 미확정.
+- 기존 검증 로그22건(auth/app VALID19, auth VALID/app MISSING3), 조건에 맞는 오류 감사 기록0. 자료 부재를 오류 해소로 해석하지 않음. 세부 원인/일반 Chrome 조건 대조 및 수정 선택은 승인 대기.
+- 문서 외 코드/설정/배포·권한·보안 완화·실메일/창·실환자·새 자원·main/태그 변경 없음. 테스트/빌드 재실행 없음, 기존88개 기록과 구분.
+
 ## 운영 전 정책·운영 준비 문서 — 2026-10-31
 
 - [처리방침/단계별 동의 초안](privacy-policy-draft.md), [짧은 결정 체크리스트](privacy-approval-checklist.md), [자동/수동 운영 매뉴얼](privacy-operations-manual.md), [Chrome 진단 계획](app-check-chrome-diagnosis.md) 작성. 미확정 항목은 `[확인 필요]`로 구분, 웹사이트 미게시.
