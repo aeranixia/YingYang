@@ -1,4 +1,4 @@
-export const consentVersion = 'staging-clinic-submission-2'
+export const consentVersion = 'staging-clinic-submission-3'
 export const syntheticNames = ['가상테스터', '테스트환자'] as const
 export const syntheticPhones = ['01000001234', '01000005678'] as const
 export type MockScenario = 'success' | 'fail-once'

@@ -22,3 +22,13 @@ it('검사 전·PDF 처리 안내는 같은 방침 문구를 사용하며 브라
  expect(container.textContent).toContain('현재 허용 창은 닫혀 있습니다')
  expect(container.textContent).toContain('접수된 메일·다운로드 사본과 진료기록은 브라우저 응답의 7일 만료와 별도로 관리')
 })
+it('메일 수동 파기와 제공자 삭제 지연을 밝히고 PDF 전체에 법정기간을 일괄 적용하지 않는다', () => {
+ const { container } = render(<PrivacyPolicy/>)
+ const text = container.textContent || ''
+ expect(text).toContain('이 앱은 메일함·단말 파일을 자동 삭제하지 않습니다')
+ expect(text).toContain('계정 삭제 요청 전까지 유지')
+ expect(text).toContain('최대 180일')
+ expect(text).toContain('모든 PDF나 이메일을 일률적으로 5년 또는 10년 보관한다는 뜻은 아닙니다')
+ expect(text).toContain('일반 로그 보관 설정은 30일, 필수 감사 로그는 400일')
+ expect(screen.getByRole('link', { name: 'Firebase 개인정보 처리·보관·처리 위치', hidden: true }).getAttribute('href')).toBe('https://firebase.google.com/support/privacy')
+})

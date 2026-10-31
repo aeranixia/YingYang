@@ -5,7 +5,7 @@ const {createSubmissionService}=require('../lib/functions/src/service')
 const {issuePrivacy}=require('../lib/functions/src/privacy')
 const key='synthetic-signing-key-for-completion-tests',at=Date.parse('2026-10-26T15:07:00Z')
 const answers=()=>({acquired:[1,2,3,4,1,2,3,4,1,2],innate:Array(40).fill(2)})
-const confirm=(data=answers())=>confirmCompletion({...data,action:'confirm-completion',nonce:randomUUID(),privacyProof:issuePrivacy({action:'consent-privacy',personal:true,sensitive:true,version:'staging-clinic-privacy-3'},'tester',key,at).proof,expires:at+7*86400000},'tester',key,at).proof
+const confirm=(data=answers())=>confirmCompletion({...data,action:'confirm-completion',nonce:randomUUID(),privacyProof:issuePrivacy({action:'consent-privacy',personal:true,sensitive:true,version:'staging-clinic-privacy-4'},'tester',key,at).proof,expires:at+7*86400000},'tester',key,at).proof
 
 test('KST completion proof uses server time across midnight, not generation or resend time',async()=>{
  const input={...answers(),completionProof:confirm()}
@@ -33,7 +33,7 @@ test('completion confirmation rejects partial answers and client timestamp field
 test('mock PDF service verifies completion proof before processing and retains confirmed time',async()=>{
  let date,called=0
  const service=createSubmissionService({send:async()=>{called++}},()=>at+3600000,async(input,time)=>{date=time;return Buffer.from('%PDF-test')})
- const input={...answers(),completionProof:confirm(),requestId:randomUUID(),version:1,name:'가상테스터',phone:'01000001234',consent:{personal:true,sensitive:true,synthetic:true,version:'staging-clinic-submission-2'},scenario:'success'}
+ const input={...answers(),completionProof:confirm(),requestId:randomUUID(),version:1,name:'가상테스터',phone:'01000001234',consent:{personal:true,sensitive:true,synthetic:true,version:'staging-clinic-submission-3'},scenario:'success'}
  await service(input,'tester',key);assert.equal(date.getTime(),at)
  await assert.rejects(service({...input,requestId:randomUUID(),completionProof:input.completionProof+'x'},'tester',key))
  assert.equal(called,1)

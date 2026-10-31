@@ -5,7 +5,7 @@ const { once } = require('node:events')
 const { randomUUID } = require('node:crypto')
 const { join } = require('node:path')
 const { createSubmissionService } = require('../lib/functions/src/service')
-const input = () => ({ requestId:randomUUID(),version:1,name:'가상테스터',phone:'01000001234',acquired:Array(10).fill(1),innate:Array(40).fill(0),consent:{personal:true,sensitive:true,synthetic:true,version:'staging-clinic-submission-2'},scenario:'success' })
+const input = () => ({ requestId:randomUUID(),version:1,name:'가상테스터',phone:'01000001234',acquired:Array(10).fill(1),innate:Array(40).fill(0),consent:{personal:true,sensitive:true,synthetic:true,version:'staging-clinic-submission-3'},scenario:'success' })
 function start(hang = false) { return fork(join(__dirname,'helpers/process-worker.cjs'),[],{env:{...process.env,TEST_HANG:hang?'1':'0'},stdio:['ignore','ignore','ignore','ipc']}) }
 function result(child, data, started = false) { return new Promise((resolve,reject)=>{
  const timer=setTimeout(()=>{child.off('message',receive);reject(Error('Local worker response deadline'))},3000)
