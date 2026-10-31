@@ -26,3 +26,5 @@ UI54 + 배포 보호2 + 서버36 =92개 통과. 일반·Staging·Functions 빌�
 후속 승인·발송 결과: 사용자가 계획을 승인하여 기존 개인 테스트 수신자로 임시 전환 후 가상 PDF1건 발송. HTTP200/gmail-accepted, duplicate=false. 공유 상태 sent/attempts1, KST 시도수 증가1, 추가 submit0. 창 닫힘 확인. 실제 수신/첨부 확인 대기이며 정상 확인 뒤 한의원 수신자로 복원한다. 현재 개인 테스트 수신자 설정은 확인 대기용이며 발송 불가 상태다. 수신 확인 전 이슈 종료 금지.
 
 미리보기 수정: 기존 GitHub raw 링크404 확인. 기존 Staging 공개 가상 미리보기 복사 절차에 issue-6-pdf.png 추가, npm test56개·일반/Staging 빌드 재통과 후 Hosting만 배포. 이미지 https://yingyangtest.web.app/previews/issue-6-pdf.png HTTP200·image/png·로컬 해시 일치 및 noindex 확인. GitHub 댓글 이미지 주소 교체. 실제 GitHub UI 표시 여부는 사용자 확인 필요.
+
+최종 확인·복원 완료(2026-11-01 KST): 사용자가 테스트 메일/첨부를 확인했다. Staging 고정 수신자를 한의원 공식 수신자로 복원하고 최신 설정을 재조회하여 일치를 확인했다. 발신자·OAuth 클라이언트 설정 불변, Secret의 허용 시각 및 공유 발송 창 모두 닫힘 확인. 복원 뒤 추가 발송 요청0. 사용자 최종 확인 조건 충족으로 #6 완료 처리, #4는 운영 최종 승인 전 열린 상태 유지. 이번 복원은 서버 비밀 설정/기존 제어 상태만 다루며 앱 코드·운영 배포·main·태그 변경 없음.
