@@ -27,6 +27,9 @@ it('signed out page has login only, no report or tabs', async () => {
  mocks.signed = false; show()
  expect(await screen.findByRole('button', { name: 'Google로 로그인' })).toBeTruthy()
  expect(screen.queryByText('synthetic report')).toBeNull(); expect(screen.queryByRole('tab')).toBeNull()
+ expect(screen.queryByText('최초 설정 담당자 인증')).toBeNull()
+ expect(screen.queryByLabelText('설정 담당자 이메일')).toBeNull()
+ expect(screen.queryByLabelText('설정 담당자 비밀번호')).toBeNull()
 })
 it('unapproved signed-in account shows approval state without duplicate login', async () => {
  show(); await screen.findByRole('heading', { name: '관리자 승인 대기' })
