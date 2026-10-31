@@ -1,4 +1,4 @@
-﻿const {test}=require('node:test'),assert=require('node:assert/strict'),{randomUUID}=require('node:crypto')
+const {test}=require('node:test'),assert=require('node:assert/strict'),{randomUUID}=require('node:crypto')
 const {prepareMailTicket,createLiveService}=require('../lib/functions/src/live-service')
 const {Conflict,GcsStateStore}=require('../lib/functions/src/mail-state')
 const {validateMailConfig,composeTestMail}=require('../lib/functions/src/gmail-sender')
@@ -83,7 +83,7 @@ test('real-test PDF uses truthful email label and separate draft consent',async(
  const loading=getDocument({data:new Uint8Array(bytes),isEvalSupported:false});const doc=await loading.promise
  const text=(await (await doc.getPage(1)).getTextContent()).items.map(x=>x.str).join(' ')
  assert.ok(text.includes('실제 이메일 테스트'));assert.ok(!text.includes('실제 이메일은 발송되지 않으며'));assert.equal(doc.numPages,1)
- assert.throws(()=>prepareMailTicket({...data,consent:{...data.consent,version:'staging-bc-draft-1'}},uid,config(),key,epoch))
+ assert.throws(()=>prepareMailTicket({...data,consent:{...data.consent,version:'staging-clinic-submission-2'}},uid,config(),key,epoch))
  await loading.destroy();bytes.fill(0)
 })
 
