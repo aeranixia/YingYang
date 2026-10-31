@@ -9,6 +9,7 @@ import { readMailSecret, validateMailConfig, refreshGmailToken, dispatchGmail } 
 import { prepareMailTicket, createLiveService, LiveError, DAILY_MAIL_ATTEMPT_LIMIT } from './live-service'
 import { confirmCompletion } from './completion'
 import { issuePrivacy, verifyPrivacy } from './privacy'
+import { ReportArchive, GcsArchiveStore, AdminError } from './admin-reports'
 
 const signingKey = defineSecret('STAGING_REQUEST_SIGNING_KEY')
 const allowLocalRequest = createLocalLimiter()
@@ -45,7 +46,9 @@ export const stagingStatus = onCall(callableOptions, request => {
 })
 
 const liveState = new GcsStateStore('yingyangtest-mail-state-495270334718')
-const liveService = createLiveService(liveState, dispatchGmail, refreshGmailToken)
+const reportArchive = new ReportArchive(new GcsArchiveStore())
+const deliveryArchive = process.env.STAGING_ADMIN_ARCHIVE_ENABLED==='true' ? reportArchive : undefined
+const liveService = createLiveService(liveState, dispatchGmail, refreshGmailToken, Date.now, undefined, deliveryArchive)
 const allowLive = createLocalLimiter()
 const liveHandler = (prepare: boolean) => onCall(callableOptions, async request => {
  if (!request.auth || !request.app) throw new HttpsError('unauthenticated', '테스트 인증이 필요합니다.')
@@ -75,7 +78,7 @@ const liveHandler = (prepare: boolean) => onCall(callableOptions, async request 
 export const prepareStagingReport = liveHandler(true)
 export const submitStagingReport = liveHandler(false)
 
-const processSubmission = createSubmissionService(mockSender)
+const processSubmission = createSubmissionService(mockSender, Date.now, undefined, deliveryArchive)
 const allowSubmission = createLocalLimiter()
 export const submitMockReport = onCall(callableOptions, async request => {
  if (!request.auth) throw new HttpsError('unauthenticated', '테스트 계정 로그인이 필요합니다.')
@@ -94,3 +97,22 @@ export const submitMockReport = onCall(callableOptions, async request => {
   throw new HttpsError('internal', '모의 처리를 완료하지 못했습니다.')
  }
 })
+
+const allowAdmin = createLocalLimiter()
+const adminHandler = (download: boolean) => onCall(callableOptions, async request => {
+ request.rawRequest.res?.setHeader('Cache-Control','no-store')
+ const context = {project:process.env.GCLOUD_PROJECT,uid:request.auth?.uid,app:!!request.app,claims:request.auth?.token}
+ if (!deliveryArchive || !request.auth || !request.app || request.auth.token.stagingAdmin!==true || !allowedStage(process.env.GCLOUD_PROJECT,request.auth.token.stagingTester)) throw new HttpsError('permission-denied','관리자 권한이 필요합니다.')
+ if (request.rawRequest.rawBody?.length>4096) throw new HttpsError('invalid-argument','요청을 확인해 주세요.')
+ if (!allowAdmin(Date.now())) throw new HttpsError('resource-exhausted','잠시 후 다시 조회해 주세요.')
+ try {
+  const key=signingKey.value()
+  if(key.length<32)throw Error()
+  return download ? await reportArchive.download(request.data,context,key) : await reportArchive.page(request.data,context,key)
+ } catch(error) {
+  if(error instanceof AdminError)throw new HttpsError(error.code,'관리자 조회 요청을 처리할 수 없습니다. 권한·필터·PDF 만료 상태를 확인해 주세요.')
+  throw new HttpsError('unavailable','관리자 저장소를 확인할 수 없습니다. 잠시 후 다시 시도해 주세요.')
+ }
+})
+export const listAdminReports = adminHandler(false)
+export const downloadAdminReport = adminHandler(true)

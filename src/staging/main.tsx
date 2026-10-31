@@ -7,6 +7,8 @@ import { getFunctions, httpsCallable } from 'firebase/functions'
 import config from './public-config'
 import { PrivacyGate } from './PrivacyGate'
 import { PrivacyPolicy } from './PrivacyPolicy'
+import { AdminReports } from './AdminReports'
+import type { AdminQuery, AdminPage, AdminDownload } from './admin-contracts'
 import type { Submission, MockReceipt } from './contracts'
 import { loginErrorMessage } from './login'
 import { confirmPending } from './completion'
@@ -25,11 +27,15 @@ const sendReport = async (input: Submission) => (await submitReport(input)).data
 const confirmReport = async (input: Parameters<Parameters<typeof confirmPending>[1]>[0]) => (await httpsCallable<typeof input, { proof: string }>(getFunctions(app, 'asia-northeast3'), 'stagingStatus')(input)).data
 const authorizePrivacy = async () => (await httpsCallable<unknown, PrivacyReceipt>(getFunctions(app, 'asia-northeast3'), 'stagingStatus')({ action: 'consent-privacy', version: privacyVersion, personal: true, sensitive: true })).data
 const verifyPrivacy = async (privacyProof: string) => (await httpsCallable(getFunctions(app, 'asia-northeast3'), 'stagingStatus')({ action: 'verify-privacy', privacyProof })).data
+const listReports = async (query: AdminQuery) => (await httpsCallable<AdminQuery, AdminPage>(getFunctions(app,'asia-northeast3'),'listAdminReports')(query)).data
+const downloadReport = async (id: string) => (await httpsCallable<{id:string},AdminDownload>(getFunctions(app,'asia-northeast3'),'downloadAdminReport')({id})).data
 
 function Staging() {
  const [user, setUser] = useState<User | null>(null)
  const [email, setEmail] = useState(''), [password, setPassword] = useState('')
  const [busy, setBusy] = useState(false), [notice, setNotice] = useState(''), [ready, setReady] = useState(false)
+ const [admin, setAdmin] = useState(false), [adminView,setAdminView] = useState(location.pathname==='/admin')
+ useEffect(()=>onAuthStateChanged(auth,current=>{setAdmin(false);if(current)void current.getIdTokenResult().then(result=>{if(auth.currentUser===current)setAdmin(result.claims.stagingAdmin===true)}).catch(()=>{})}),[])
  useEffect(() => onAuthStateChanged(auth, current => { setUser(current); setReady(false); setNotice('') }), [])
  async function login(event: FormEvent) {
   event.preventDefault(); setBusy(true); setNotice('')
@@ -46,7 +52,7 @@ function Staging() {
   } catch { setNotice('환경 확인을 통과하지 못했습니다. 계정 권한과 브라우저의 보안 검증 설정을 확인한 뒤 다시 시도해 주세요.') }
   finally { setBusy(false) }
  }
- if (user && ready) return <><div className="staging-ribbon">STAGING · 개인정보 보호 · 지정된 가상 정보와 응답만 사용 · 실제 이메일 발송 없음<button onClick={() => { void signOut(auth); setPassword('') }}>테스트 로그아웃</button></div><PrivacyGate authorize={authorizePrivacy} verify={verifyPrivacy} send={sendReport} confirm={confirmReport}/></>
+ if (user && ready) return <><div className="staging-ribbon">STAGING · 개인정보 보호 · 지정된 가상 정보와 응답만 사용 · 실제 이메일 발송 없음<button onClick={() => { void signOut(auth); setPassword('') }}>테스트 로그아웃</button>{admin&&<button onClick={()=>setAdminView(!adminView)}>{adminView?'검사 화면':'관리자 페이지'}</button>}</div>{adminView ? admin ? <AdminReports list={listReports} download={downloadReport}/> : <p role="alert">관리자 권한이 필요합니다.</p> : <PrivacyGate authorize={authorizePrivacy} verify={verifyPrivacy} send={sendReport} confirm={confirmReport}/>}</>
  return <div className="stage-shell"><header><strong>YingYang</strong><span className="stage-badge">STAGING · v1.2 개발 · B·C단계</span></header><main>
   <h1>접근이 제한된 테스트 환경</h1><p>가상 정보만 사용하세요. 운영 사이트와 연결되지 않습니다.</p>
   <aside>두 검진 완료 후 지정된 가상 이름·전화번호로 PDF 생성과 모의 처리를 테스트합니다. 실제 개인정보 입력과 실제 이메일 발송은 금지됩니다.</aside>

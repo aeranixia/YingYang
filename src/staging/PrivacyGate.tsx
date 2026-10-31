@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import App from '../App'
 import { PrivacyPolicy, retentionNotice } from './PrivacyPolicy'
-import { clinicName, privacyDepartment, privacyContact, preExamPersonal, preExamSensitive } from './privacy-copy'
+import { clinicName, privacyDepartment, privacyContact, preExamPersonal, preExamSensitive, adminArchiveNotice } from './privacy-copy'
 import { SubmissionForm } from './SubmissionForm'
 import type { Submission, MockReceipt } from './contracts'
 import { markCompletion, confirmPending } from './completion'
@@ -108,6 +108,7 @@ export function PrivacyGate({ authorize, verify, confirm, send }: Props) {
    <p>{clinicName}에 예약하고 방문할 예정인 환자의 진료 준비를 위한 사전 검사입니다. 현재 Staging에서는 지정된 가상 정보만 사용합니다. 문의: {privacyDepartment} (접수 및 처리), {privacyContact}.</p>
    <h2>개인정보 수집·이용</h2><p>{preExamPersonal}</p>
    <h2>건강 관련 민감정보 처리</h2><p>{preExamSensitive}</p>
+   <p>{adminArchiveNotice}</p>
    <p>이름·전화번호 및 PDF 처리 동의는 검사 후 별도로 확인합니다. 위 개인정보처리방침에서 보관·삭제와 권리행사 방법을 확인할 수 있습니다.</p>
    <p>거부할 수 있으며 거부 시 이 Staging 검사의 저장·이어하기·완료 확인·모의 전송은 이용할 수 없습니다. 다른 진료·상담 전체의 제한을 뜻하지 않습니다.</p>
    <label className="consent-check"><input type="checkbox" checked={personal} onChange={e => setPersonal(e.target.checked)} disabled={busy}/>개인정보 수집·이용에 동의합니다</label>

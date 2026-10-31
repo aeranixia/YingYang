@@ -6,6 +6,7 @@ import { completionDate } from './completion'
 import { Conflict, type StateStore } from './mail-state'
 import type { MailConfig } from './gmail-sender'
 import type { Attachment } from './sender'
+import type { DeliveryArchive } from './admin-reports'
 
 export class LiveError extends Error {
  constructor(public readonly code: 'invalid-argument' | 'already-exists' | 'aborted' | 'resource-exhausted' | 'failed-precondition' | 'unavailable', public readonly outcomeUnknown = false) { super(code) }
@@ -35,7 +36,7 @@ function verifyTicket(ticket: unknown, input: Submission, uid: string, config: M
   return parsed
  } catch { throw new LiveError('invalid-argument') }
 }
-export function createLiveService(store: StateStore, dispatch: (config: MailConfig, attachment: Attachment, operation: string, accessToken: string) => Promise<void>, authorize: (config: MailConfig) => Promise<string>, clock = Date.now, pdf = (input: Submission, date: Date | null) => createPdf(input,date,'gmail-test')) {
+export function createLiveService(store: StateStore, dispatch: (config: MailConfig, attachment: Attachment, operation: string, accessToken: string) => Promise<void>, authorize: (config: MailConfig) => Promise<string>, clock = Date.now, pdf = (input: Submission, date: Date | null) => createPdf(input,date,'gmail-test'), archive?: DeliveryArchive) {
  async function quota(now: number) {
   const date = new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(now)
   const name = `v1/days/${date}`
@@ -66,6 +67,7 @@ export function createLiveService(store: StateStore, dispatch: (config: MailConf
   let buffer: Buffer | undefined, sending=false
   try {
    buffer = await pdf(input,completedAt)
+   await archive?.capture(input,buffer,ticket.operation,'gmail')
    const accessToken = await authorize(config)
    await quota(clock())
    record={...record,state:'sending'}
@@ -73,8 +75,10 @@ export function createLiveService(store: StateStore, dispatch: (config: MailConf
    sending=true
    await dispatch(config,{filename:attachmentName(input),content:buffer},ticket.operation,accessToken)
    await store.write(name,{...record,state:'sent'},generation)
+   try { await archive?.update(ticket.operation,'success') } catch {}
    return {status:'gmail-accepted' as const,requestId:input.requestId,duplicate:false}
   } catch(error) {
+   try { await archive?.update(ticket.operation,'failed',sending?'outcome-unknown':'before-send-failed') } catch {}
    if (!sending) {
     try { await store.write(name,{...record,state:'failed'},generation) } catch {}
     if(error instanceof LiveError) throw error

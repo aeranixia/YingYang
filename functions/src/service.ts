@@ -3,12 +3,13 @@ import { createPdf } from './pdf'
 import { completionDate } from './completion'
 import type { Sender } from './sender'
 import type { MockReceipt } from '../../src/staging/contracts'
+import { mockOperation, type DeliveryArchive } from './admin-reports'
 
 export class ServiceError extends Error {
  constructor(public readonly code: 'already-exists' | 'aborted' | 'resource-exhausted' | 'unavailable') { super(code) }
 }
 type Entry = { digest: string; state: 'processing' | 'completed' | 'failed'; attempts: number; expiry: number }
-export function createSubmissionService(sender: Sender, clock = Date.now, pdf = createPdf) {
+export function createSubmissionService(sender: Sender, clock = Date.now, pdf = createPdf, archive?: DeliveryArchive) {
  const entries = new Map<string, Entry>()
  let day = -1, count = 0
  return async (raw: unknown, uid: string, signingKey: string): Promise<MockReceipt> => {
@@ -30,13 +31,17 @@ export function createSubmissionService(sender: Sender, clock = Date.now, pdf = 
   if (!entry) { entry = { digest, state: 'processing', attempts: 0, expiry: now + 10 * 60000 }; entries.set(id, entry) }
   entry.state = 'processing'; entry.attempts++
   let buffer: Buffer | undefined
+  const operation = mockOperation(uid,input.requestId+':'+digest,signingKey)
   try {
    buffer = await pdf(input, completedAt)
+   await archive?.capture(input,buffer,operation,'mock')
    await sender.send({ filename: attachmentName(input), content: buffer }, { fail: input.scenario === 'fail-once' && entry.attempts === 1 })
    entry.state = 'completed'
+   try { await archive?.update(operation,'success') } catch {}
    return { status: 'mock-completed', requestId: input.requestId, duplicate: false }
   } catch {
    entry.state = 'failed'
+   try { await archive?.update(operation,'failed','mock-failed') } catch {}
    throw new ServiceError('unavailable')
   } finally { buffer?.fill(0) }
  }

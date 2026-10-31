@@ -5,7 +5,7 @@ const { validateSubmission, calculate, attachmentName, InputError } = require('.
 const { createPdf } = require('../lib/functions/src/pdf')
 const { createSubmissionService } = require('../lib/functions/src/service')
 const { mockSender } = require('../lib/functions/src/sender')
-const input = () => ({ requestId: randomUUID(), version: 1, name: '가상테스터', phone: '01000001234', acquired: [1,2,3,4,1,2,3,4,1,2], innate: Array(40).fill(2), consent: { personal: true, sensitive: true, synthetic: true, version: 'staging-clinic-submission-3' }, scenario: 'success' })
+const input = () => ({ requestId: randomUUID(), version: 1, name: '가상테스터', phone: '01000001234', acquired: [1,2,3,4,1,2,3,4,1,2], innate: Array(40).fill(2), consent: { personal: true, sensitive: true, synthetic: true, version: 'staging-clinic-submission-4' }, scenario: 'success' })
 const key = 'test-only-key-not-a-real-secret'
 
 test('reject malformed identity, consents, versions, answers and recipient injection', () => {

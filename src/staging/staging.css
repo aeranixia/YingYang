@@ -7,3 +7,5 @@
 .privacy-policy summary { cursor: pointer; min-height: 44px; padding: 12px 0; font-weight: 700; }
 .privacy-policy h2 { font-size: 1.25em; margin-top: 24px; }
 .privacy-policy:focus-within { outline-offset: 4px; }
+
+.admin-shell select{font:inherit;min-height:48px;max-width:100%;padding:10px}.admin-shell fieldset{min-width:0;border:0;padding:0}.admin-results{list-style:none;padding:0}.admin-results li{padding:20px;margin:20px 0;border:1px solid #c7d3c2;border-radius:12px;background:white;overflow-wrap:anywhere}.admin-results h2{margin:0}.admin-results dl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:8px}.admin-results dd{margin:0}.admin-shell button{white-space:normal;overflow-wrap:anywhere}.admin-shell{overflow-wrap:anywhere}.admin-results li button{max-width:100%}

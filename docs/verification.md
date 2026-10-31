@@ -1,5 +1,16 @@
 # YingYang v1 검증 기록
 
+## #7 관리자 발송 이력·PDF 7일 다운로드 — 2026-11-01
+
+- 사용자 지시로 #4는 보류, #7 Staging 전용으로 진행. [구현·권한·보관·비용·검증 한계](issue-7-admin-reports.md). 관리자 UI·목록/다운로드 callable, 마스킹 이력·가상 PDF 비공개 보관·접근 기록 구현. 정상 발신 모듈·고정 수신자·공유 중복/시도 제한 유지.
+- UI60+배포 보호2+서버44=106 통과. 일반/Staging/Functions 빌드 성공, 실제 Staging 가드/기능 플래그 확인. 기존 테스트 유지, Gmail은 가상 발신 함수로 검증. 실제 메일 요청0.
+- 전용 서울 STANDARD 버킷1개, 공개 차단 enforced/균일 IAM, 버전 관리off/soft delete0, 전체객체 age7일 Delete 정책. 기존 실행 계정에 해당 버킷 objectAdmin만 추가. 기존 테스트 계정 관리자 claim 부여·기존 claim 유지. 새 서비스 계정/비밀키 없음.
+- Hosting/기존 Functions4개 업데이트·관리자 callable2개 생성/release 완료. CLI PowerShell 파이프 종료코드1과 별개로 실제 HTML/JS HTTP200·빌드 해시 일치·색인 차단 유지 확인.
+- WebKit 자동화 실제 Staging: 관리자 목록·마스킹·모의 성공/실패·실패 PDF 다운로드(A4 한 페이지·한글/두 표 제목), KST 날짜/상태 필터, 320/820/1440 가로 넘침 없음. 모의 실패 재시도 성공·완료 중복 건 재처리 생략 확인.
+- 만료 시각을 지난 가상 이력으로 서버 다운로드 차단 및 해당 PDF 객체 실제 삭제 확인. 정확한7일 경계는 로컬 테스트. 실제7일을 기다린 lifecycle 물리 삭제 관찰 아님. 자동 삭제 설정 확인과 시뮬레이션을 구분한다.
+- 익명 목록401·공개 PDF URL403, 실제 Auth/App Check가 있는 관리자 권한 없는 임시 가상 계정의 목록403 확인. 임시 계정은 테스트 후 삭제 완료. 관리자 접근 기록 객체5개 생성 확인. 실제 Safari/모바일 기기 시험 아님.
+- 배포 후 한의원 고정 수신자·발신자 유지와 Secret/공유 발송 창 닫힘 재확인. 운영 HTML 기준 해시 일치. main/운영/출시 태그·실환자·실제 메일·Firestore/Redis/새 스케줄러 변경 없음.
+
 ## 실제 처리경로·보관/파기 구체화 — 2026-11-01
 
 - 댓글6545884165 승인. [처리경로별 사실·법적 근거](privacy-processing-register.md), [운영 수동 파기 기준](privacy-operations-manual.md), [없는 증빙/단일 확인 행동](privacy-final-confirmation.md), [배포 직전 체크리스트](production-preflight.md) 작성. 이미 확정한 운영 정보/보류 논의 재질문 없음.

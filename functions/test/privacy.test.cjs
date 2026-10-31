@@ -26,7 +26,7 @@ test('deployed callable handlers reject missing consent before completion/mock a
  const r=await stagingStatus.run(wrap({action:'consent-privacy',version:privacyVersion,personal:true,sensitive:true}))
  assert.equal((await stagingStatus.run(wrap({action:'verify-privacy',privacyProof:r.proof}))).valid,true)
  const done=await stagingStatus.run(wrap({...answers(),action:'confirm-completion',nonce:randomUUID(),privacyProof:r.proof,expires:r.expires}))
- const submission={...answers(),requestId:randomUUID(),version:1,name:'가상테스터',phone:'01000001234',consent:{personal:true,sensitive:true,synthetic:true,version:'staging-clinic-submission-3'},scenario:'success',completionProof:done.proof}
+ const submission={...answers(),requestId:randomUUID(),version:1,name:'가상테스터',phone:'01000001234',consent:{personal:true,sensitive:true,synthetic:true,version:'staging-clinic-submission-4'},scenario:'success',completionProof:done.proof}
  await assert.rejects(submitMockReport.run(wrap(submission)),e=>e.code==='failed-precondition')
  assert.equal((await submitMockReport.run(wrap({...submission,privacyProof:r.proof}))).status,'mock-completed')
 })

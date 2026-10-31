@@ -11,7 +11,7 @@ afterEach(()=>{cleanup();vi.restoreAllMocks()})
 function agree(){for(const box of screen.getAllByRole('checkbox'))fireEvent.click(box)}
 it('이전 동의 버전은 다시 확인하되 기존 응답과 저장 시각은 유지한다',async()=>{
  seedPrivacy({acquired:{...fresh('acquired'),answers:[2,...Array(9).fill(null)]},innate:fresh('innate')})
- const prior=JSON.parse(localStorage.getItem(privacyKey)!);prior.version='staging-clinic-privacy-3';localStorage.setItem(privacyKey,JSON.stringify(prior))
+ const prior=JSON.parse(localStorage.getItem(privacyKey)!);prior.version='staging-clinic-privacy-4';localStorage.setItem(privacyKey,JSON.stringify(prior))
  const answers=localStorage.getItem(key('acquired')),saved=localStorage.getItem(metadataKey)
  const props=callbacks();render(<PrivacyGate {...props}/>);await screen.findByRole('heading',{name:'검사 시작 전 안내와 동의'})
  expect(props.verify).not.toHaveBeenCalled();agree();fireEvent.click(screen.getByRole('button',{name:'동의하고 검사 시작·이어하기'}))
