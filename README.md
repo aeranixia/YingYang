@@ -52,7 +52,7 @@ npm run build
 
 ## 코드와 데이터
 
-Staging 관리자 기능은 [#7 관리자 안내](docs/issue-7-admin-reports.md)에 있습니다. `/admin`은 마스터·일반 관리자 모두 Google 로그인만 사용하며 서버 승인/UID 연결·Auth·App Check를 확인합니다. 별도 ID·비밀번호 로그인·초기화는 제거했습니다. 일반 관리자도 가상 PDF를7일 이내에 조회할 수 있습니다. 실제 발송 창과 운영 사이트는 별도이며 운영 전환은 현재 사용자 요청으로 중지 상태입니다.
+관리자 기능은 [#7 관리자 안내](docs/issue-7-admin-reports.md)에 있습니다. `/admin`은 마스터·일반 관리자 모두 Google 로그인만 사용하며 서버 승인/UID 연결·Auth·App Check를 확인합니다. 별도 ID·비밀번호 로그인·초기화는 제거했습니다. 일반 관리자도 PDF를7일 이내에 조회할 수 있습니다. v1.2.0은 yingyangcheck 운영 사이트에 이메일 전송 중지 상태로 배포했습니다. [운영 구성·배포·롤백](docs/production-v1.2.md)을 참고하세요.
 
 - `src/questions.ts`: 사진에서 옮긴 문항, 강조 구절, 분류표
 - `src/engine.ts`: 상태 전이, 검증, 저장·복구, 순수 집계 함수
