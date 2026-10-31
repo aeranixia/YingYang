@@ -22,3 +22,7 @@ UI54 + 배포 보호2 + 서버36 =92개 통과. 일반·Staging·Functions 빌�
 최대1건의 기존 승인 서비스 종량제 사용 가능. 실제 환자 정보·운영 프로젝트·main·출시 태그·추가 유료 자원은 범위 밖이다. 사용자 메일 시험 승인·수신/첨부 확인 및 최종 확인 전 #6은 종료하지 않는다.
 
 배포 결과: yingyangtest Hosting 및 Functions4개 업데이트 성공 메시지 확인. PowerShell 파이프 종료 코드는1이었으므로 실제 Staging HTML/JS HTTP200·로컬 빌드 해시 일치를 추가 확인했다. noindex/no-store 유지. 운영 HTML HTTP200·기존 기준 해시 일치. 수신자/발송 창 변경이나 실제 메일 요청은 수행하지 않았다. 실제 인증된 브라우저에서 제목 변경을 재확인한 것은 아니며 웹 자동 테스트와 배포 자산 대조를 구분한다.
+
+후속 승인·발송 결과: 사용자가 계획을 승인하여 기존 개인 테스트 수신자로 임시 전환 후 가상 PDF1건 발송. HTTP200/gmail-accepted, duplicate=false. 공유 상태 sent/attempts1, KST 시도수 증가1, 추가 submit0. 창 닫힘 확인. 실제 수신/첨부 확인 대기이며 정상 확인 뒤 한의원 수신자로 복원한다. 현재 개인 테스트 수신자 설정은 확인 대기용이며 발송 불가 상태다. 수신 확인 전 이슈 종료 금지.
+
+미리보기 수정: 기존 GitHub raw 링크404 확인. 기존 Staging 공개 가상 미리보기 복사 절차에 issue-6-pdf.png 추가, npm test56개·일반/Staging 빌드 재통과 후 Hosting만 배포. 이미지 https://yingyangtest.web.app/previews/issue-6-pdf.png HTTP200·image/png·로컬 해시 일치 및 noindex 확인. GitHub 댓글 이미지 주소 교체. 실제 GitHub UI 표시 여부는 사용자 확인 필요.
