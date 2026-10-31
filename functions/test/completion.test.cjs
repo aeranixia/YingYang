@@ -46,7 +46,7 @@ test('PDF layout has aligned side-by-side tables, large fonts, bounded text and 
   const load=getDocument({data:new Uint8Array(bytes),isEvalSupported:false}),pdf=await load.promise
   assert.equal(pdf.numPages,1)
   const page=await pdf.getPage(1),items=(await page.getTextContent({disableNormalization:true})).items.filter(x=>x.str)
-  const left=items.find(x=>x.str==='후천적 검사'),right=items.find(x=>x.str==='타고난 검사')
+  const left=items.find(x=>x.str==='후천적 체질'),right=items.find(x=>x.str==='타고난 체질')
   assert.equal(left.transform[5],right.transform[5]);assert.ok(right.transform[4]>left.transform[4]+200)
   assert.ok(left.height>=20)
   for(const item of items){assert.ok(item.transform[4]>=39,item.str);assert.ok(item.transform[4]+item.width<=page.view[2]-35,item.str);assert.ok(item.transform[5]>=25&&item.transform[5]<=page.view[3]-25,item.str)}

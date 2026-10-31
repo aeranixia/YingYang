@@ -1,4 +1,4 @@
-﻿import PDFDocument from 'pdfkit'
+import PDFDocument from 'pdfkit'
 import { join } from 'node:path'
 import { calculate } from './submission'
 import type { Submission } from '../../src/staging/contracts'
@@ -36,7 +36,7 @@ export async function createPdf(input: Submission, completedAt: Date | null, mod
   })
   text('서버가 두 검사의 완료를 확인한 시각입니다.', left + 16, 333, 11, width - 32, '#52635a')
   text('실제 클릭·PDF 생성·이메일 발송 시각과 다를 수 있습니다.', left + 16, 350, 11, width - 32, '#52635a')
-  for (const [index, [title, rows, unit]] of ([['후천적 검사', scores.acquired, '회'], ['타고난 검사', scores.innate, '점']] as const).entries()) {
+  for (const [index, [title, rows, unit]] of ([['후천적 체질', scores.acquired, '회'], ['타고난 체질', scores.innate, '점']] as const).entries()) {
    const x = left + index * (tableWidth + gap), top = 394, header = 438, rowHeight = 47
    text(title, x, top, 22, tableWidth)
    doc.rect(x, header, tableWidth, 39).fill('#203d34')

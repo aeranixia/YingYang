@@ -5,6 +5,15 @@ import { fresh, key } from './engine'
 import { textSizeKey } from './preferences'
 beforeEach(() => { localStorage.clear(); vi.spyOn(window,'scrollTo').mockImplementation(() => {}) })
 afterEach(() => { cleanup(); vi.restoreAllMocks() })
+it('검사 표시 명칭은 체질로 통일하고 기존 저장 키를 유지한다', () => {
+ render(<App/> )
+ expect(screen.getByRole('heading', { name: '후천적 체질' })).toBeTruthy()
+ expect(screen.getByRole('heading', { name: '타고난 체질' })).toBeTruthy()
+ expect(key('acquired')).toBe('yingyang:acquired')
+ expect(key('innate')).toBe('yingyang:innate')
+ fireEvent.click(screen.getAllByRole('button', { name: /시작하기/ })[0])
+ expect(screen.getByText('01 · 후천적 체질')).toBeTruthy()
+})
 function seedCompleted(kind: 'acquired' | 'innate') {
  localStorage.setItem(key(kind), JSON.stringify({ ...fresh(kind), answers: Array(kind === 'acquired' ? 10 : 40).fill(kind === 'acquired' ? 3 : 2), completed: true }))
 }

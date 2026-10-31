@@ -3,7 +3,7 @@ export type Group = '가' | '나' | '다' | '라'
 export type Segment = { text: string; bold?: boolean }
 export type Option = { value: number; content: Segment[] }
 export type Question = { id: number; content: Segment[]; options: Option[]; group?: Group }
-export const titles: Record<Kind, string> = { acquired: '후천적 체질 진단', innate: '타고난 체질 진단' }
+export const titles: Record<Kind, string> = { acquired: '후천적 체질', innate: '타고난 체질' }
 export const segments = (text: string): Segment[] => text.split('**').map((text, i) => ({ text, bold: i % 2 === 1 }))
 const acquiredSource: [string, string[]][] = [
  ['내가 생각하기에 나는 누구인가?', [
