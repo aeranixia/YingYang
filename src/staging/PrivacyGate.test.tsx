@@ -4,11 +4,24 @@ import { fresh, key } from '../engine'
 import { PrivacyGate } from './PrivacyGate'
 import { deleteAll, metadataKey, privacyKey, retentionMs } from './privacy-storage'
 import { seedPrivacy } from './test-privacy'
+import { textSizeKey } from '../preferences'
 const receipt=()=>({proof:'synthetic-server-receipt',at:Date.now(),expires:Date.now()+retentionMs})
 const callbacks=()=>({authorize:vi.fn(async()=>receipt()),verify:vi.fn(async()=>({valid:true})),confirm:vi.fn(async()=>({proof:'synthetic-completion'})),send:vi.fn()})
 beforeEach(()=>{localStorage.clear();vi.spyOn(window,'scrollTo').mockImplementation(()=>{})})
 afterEach(()=>{cleanup();vi.restoreAllMocks()})
 function agree(){for(const box of screen.getAllByRole('checkbox'))fireEvent.click(box)}
+it('시작 전 글자 크기를 저장·복원하고 동의 선택과 기존 답변을 유지한다',async()=>{
+ const saved=JSON.stringify({...fresh('acquired'),answers:[2,...Array(9).fill(null)]});localStorage.setItem(key('acquired'),saved)
+ const props=callbacks(),view=render(<PrivacyGate {...props}/>);await screen.findByRole('heading',{name:'검사 시작 전 안내와 동의'})
+ fireEvent.click(screen.getAllByRole('checkbox')[0])
+ for(const [label,value] of [['소','small'],['중','medium'],['대','large']]){
+  fireEvent.click(screen.getByRole('button',{name:`글자 크기 ${label}`}))
+  expect(localStorage.getItem(textSizeKey)).toBe(value);expect(screen.getByRole('button',{name:`글자 크기 ${label}`}).getAttribute('aria-pressed')).toBe('true')
+  expect((screen.getAllByRole('checkbox')[0] as HTMLInputElement).checked).toBe(true);expect(localStorage.getItem(key('acquired'))).toBe(saved)
+ }
+ view.unmount();render(<PrivacyGate {...props}/>);await screen.findByRole('heading',{name:'검사 시작 전 안내와 동의'})
+ expect(screen.getByRole('button',{name:'글자 크기 대'}).getAttribute('aria-pressed')).toBe('true')
+})
 it('이전 동의 버전은 다시 확인하되 기존 응답과 저장 시각은 유지한다',async()=>{
  seedPrivacy({acquired:{...fresh('acquired'),answers:[2,...Array(9).fill(null)]},innate:fresh('innate')})
  const prior=JSON.parse(localStorage.getItem(privacyKey)!);prior.version='staging-clinic-privacy-4';localStorage.setItem(privacyKey,JSON.stringify(prior))

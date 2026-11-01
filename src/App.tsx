@@ -13,7 +13,7 @@ function Result({ state }: { state: Session }) {
 function CompletedResult({ state }: { state: Session }) {
  return <details className="completed-result"><summary>{state.kind === 'acquired' ? '후천적' : '타고난'} 체질 결과 보기</summary><div className="panel"><Result state={state}/></div></details>
 }
-export default function App({ submission, onSessionsChange, sessionStore, edition }: { edition?: string; submission?: (states: Record<Kind, Session>) => ReactNode; onSessionsChange?: (states: Record<Kind, Session>, newlyCompleted: boolean) => void; sessionStore?: { read: (kind: Kind) => Session; save: (state: Session) => void } } = {}) {
+export default function App({ submission, onSessionsChange, sessionStore, edition, onTextSizeChange }: { edition?: string; onTextSizeChange?: (size: TextSize) => void; submission?: (states: Record<Kind, Session>) => ReactNode; onSessionsChange?: (states: Record<Kind, Session>, newlyCompleted: boolean) => void; sessionStore?: { read: (kind: Kind) => Session; save: (state: Session) => void } } = {}) {
  const production = edition === 'v1.2.0'
  const [states, setStates] = useState<Record<Kind, Session>>(() => ({ acquired: (sessionStore?.read || read)('acquired'), innate: (sessionStore?.read || read)('innate') }))
  const [view, setView] = useState<View>('home'), [warning, setWarning] = useState('')
@@ -21,7 +21,7 @@ export default function App({ submission, onSessionsChange, sessionStore, editio
  const [textSize, setTextSize] = useState(readTextSize)
  const [sizeWarning, setSizeWarning] = useState('')
  function changeTextSize(size: TextSize) {
-  setTextSize(size)
+  setTextSize(size); onTextSizeChange?.(size)
   try { localStorage.setItem(textSizeKey, size); setSizeWarning('') }
   catch { setSizeWarning('글자 크기 설정을 저장하지 못했습니다. 현재 화면에는 적용되지만 다시 접속하면 유지되지 않을 수 있습니다.') }
  }

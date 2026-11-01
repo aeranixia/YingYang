@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import App from '../App'
+import { readTextSize, textSizeKey, textSizes, type TextSize } from '../preferences'
 import { PrivacyPolicy, retentionNotice } from './PrivacyPolicy'
 import { clinicName, privacyDepartment, privacyContact, preExamPersonal, preExamSensitive, adminArchiveNotice } from './privacy-copy'
 import { SubmissionForm } from './SubmissionForm'
@@ -20,6 +21,8 @@ function failureCode(error: unknown) {
  return typeof code === 'string' && /^(functions|auth|appCheck)\/[a-z-]{1,40}$/.test(code) ? code : 'local-state-or-connection'
 }
 export function PrivacyGate({ authorize, verify, confirm, send, production=false, renderSubmission }: Props) {
+ const [textSize,setTextSize]=useState(readTextSize),[sizeWarning,setSizeWarning]=useState('')
+ function changeTextSize(size:TextSize){setTextSize(size);try{localStorage.setItem(textSizeKey,size);setSizeWarning('')}catch{setSizeWarning('글자 크기 설정을 저장하지 못했습니다. 현재 화면에만 적용됩니다.')}}
  const [ready, setReady] = useState(false), [checking, setChecking] = useState(true), [busy, setBusy] = useState(false)
  const [personal, setPersonal] = useState(false), [sensitive, setSensitive] = useState(false), [legacy, setLegacy] = useState(false)
  const verifiedProof = useRef(''), observedEpoch = useRef(epoch()), authorized = useRef(false)
@@ -94,7 +97,8 @@ export function PrivacyGate({ authorize, verify, confirm, send, production=false
  }
  const currentEpoch = epoch()
  const store = useMemo(() => sessionStore(currentEpoch), [currentEpoch, revision])
- return <>
+ return <div className="privacy-flow" data-text-size={textSize}>
+  {!ready&&<div className="privacy-font-settings"><div className="text-settings" role="group" aria-label="글자 크기"><span>글자 크기</span><div className="text-size-buttons">{textSizes.map(size=><button type="button" key={size.value} aria-label={`글자 크기 ${size.label}`} aria-pressed={textSize===size.value} onClick={()=>changeTextSize(size.value)}>{size.label}</button>)}</div></div>{sizeWarning&&<p role="status">{sizeWarning}</p>}</div>}
   <section className="panel privacy-panel" aria-label="검사 개인정보 보호"><strong>{production?'YingYang · 개인정보 보호':'STAGING · 가상 자료 전용 · 실제 이메일 발송 없음'}</strong>
    <p>공유 기기에는 검사 응답이 남을 수 있습니다. 로그아웃과 검사 데이터 삭제는 다릅니다.</p>
    <p>{retentionNotice}</p>
@@ -103,7 +107,7 @@ export function PrivacyGate({ authorize, verify, confirm, send, production=false
    <button type="button" className="secondary" onClick={() => setRemoval(true)}>검사 데이터 모두 삭제</button>
    {message && <p role="status">{message}</p>}
   </section>
-  {checking ? <p role="status">동의와 임시 저장 상태 확인 중…</p> : ready ? <App edition={production?'v1.2.0':undefined} key={revision} sessionStore={store} onSessionsChange={(states, completed) => { assertStates(states, currentEpoch); markCompletion(states, completed); void confirmPending(states, confirm).catch(() => {}) }} submission={states => {const props={states,confirm,guard:() => { assertStates(states, currentEpoch); return requirePrivacy(currentEpoch).proof },send:async (input:Submission) => { assertStates(states, currentEpoch); const result = await send(input); assertStates(states, currentEpoch); return result }};return renderSubmission?renderSubmission(props):<SubmissionForm {...props}/>}}/> : <section className="panel privacy-panel">
+  {checking ? <p role="status">동의와 임시 저장 상태 확인 중…</p> : ready ? <App onTextSizeChange={setTextSize} edition={production?'v1.2.0':undefined} key={revision} sessionStore={store} onSessionsChange={(states, completed) => { assertStates(states, currentEpoch); markCompletion(states, completed); void confirmPending(states, confirm).catch(() => {}) }} submission={states => {const props={states,confirm,guard:() => { assertStates(states, currentEpoch); return requirePrivacy(currentEpoch).proof },send:async (input:Submission) => { assertStates(states, currentEpoch); const result = await send(input); assertStates(states, currentEpoch); return result }};return renderSubmission?renderSubmission(props):<SubmissionForm {...props}/>}}/> : <section className="panel privacy-panel">
    <h1>검사 시작 전 안내와 동의</h1>
    <p>{production?'검사 응답의 자동 저장·이어하기, 서버 완료 확인·재집계 및 PDF 작성에 사용합니다. 이름·전화번호는 브라우저에 영구 저장하지 않습니다. 결과 전송은 검사 완료 후 별도 동의를 확인합니다.':'가상 응답의 자동 저장·이어하기, 서버 완료 확인·재집계, PDF 생성과 모의 처리에 사용합니다. 이름·전화번호는 검사 후 가상 정보만 입력하며 브라우저에 영구 저장하지 않습니다.'}</p>
    <p>검사 시작·이어하기와 응답의 서버 전송 전에 아래 두 항목에 각각 동의해 주세요. 서버 동의 확인 요청에는 검사 응답을 넣지 않습니다.</p>
@@ -124,5 +128,5 @@ export function PrivacyGate({ authorize, verify, confirm, send, production=false
    {legacy && <button className="secondary" disabled={busy} onClick={() => setRemoval(true)}>삭제하고 새로 시작</button>}
   </section>}
   {removal && <div className="modal-backdrop" ref={dialogRef}><section className="modal panel" role="alertdialog" aria-modal="true" aria-label="검사 데이터 삭제 확인"><h2>검사 데이터를 모두 삭제할까요?</h2><p>두 검사 응답·진행 상태·완료 증명·임시 동의와 입력 화면을 지우고 이어하기를 종료합니다. 글자 크기는 유지합니다. 이미 접수된 요청·메일·로그·백업은 삭제되거나 전송 취소되지 않습니다.</p><div className="actions"><button className="secondary" onClick={() => setRemoval(false)}>취소</button><button className="primary" onClick={remove}>모두 삭제 확인</button></div></section></div>}
- </>
+ </div>
 }
