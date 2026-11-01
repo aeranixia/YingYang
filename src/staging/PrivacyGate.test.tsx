@@ -5,7 +5,7 @@ import { PrivacyGate } from './PrivacyGate'
 import { deleteAll, metadataKey, privacyKey, retentionMs } from './privacy-storage'
 import { seedPrivacy } from './test-privacy'
 import { textSizeKey } from '../preferences'
-const receipt=()=>({proof:'synthetic-server-receipt',at:Date.now(),expires:Date.now()+retentionMs})
+const receipt=()=>{const at=Date.now();return {proof:'synthetic-server-receipt',at,expires:at+retentionMs}}
 const callbacks=()=>({authorize:vi.fn(async()=>receipt()),verify:vi.fn(async()=>({valid:true})),confirm:vi.fn(async()=>({proof:'synthetic-completion'})),send:vi.fn()})
 beforeEach(()=>{localStorage.clear();vi.spyOn(window,'scrollTo').mockImplementation(()=>{})})
 afterEach(()=>{cleanup();vi.restoreAllMocks()})
