@@ -32,3 +32,12 @@ YingYang is a pre-visit questionnaire service for a Korean medicine clinic. It a
 - 운영 배포/실제 HTTP·브라우저 검증은 실행 결과를 이슈 #8에 기록한다.
 - Search Console HTML 파일·소유권 확인 성공·24시간 대기·OAuth 콘솔 링크/검증 상태·재제출은 사용자 직접 설정/확인 대기.
 - 운영 Drive OAuth/비공개 폴더·전체 검사와 실제 이메일 수신·Drive 종단 시범은 기존 미완료 항목으로 유지한다.
+
+## 실제 운영 Hosting 반영
+
+- 커밋 a83e293을 기존 운영 main에 반영하고 yingyangcheck Hosting만 배포했다. v1.3 Drive 개발 브랜치 전체를 main에 합치거나 Functions를 배포하지 않았다. 기존 Gmail 전송·관리자 권한·PDF7일 설정은 변경하지 않았다.
+- firebaseapp.com 및 web.app 양쪽에서 `/`, `/privacy`, `/terms`, `/exam`, `/admin` 총10개 경로 모두 HTTP200, Location 헤더 없음 확인. 공개3경로는 정적 HTML이며 검사/관리자 경로는 기존 운영 앱으로 연결한다.
+- 실제 firebaseapp.com의 비로그인 Chrome에서 홈페이지→개인정보처리방침 링크 이동·본문 노출 및 외부 인증 요청0을 확인했다. 검사 및 Google 관리자 로그인은 이번 공개 페이지 시험에서 실행하지 않았으므로 HTTP200만으로 전체 동작 정상이라고 보고하지 않는다.
+- 로컬 Chrome/WebKit의 최종108개 화면 조합과 글자 크기 저장, JavaScript 비활성 정책 노출을 재확인했다. 실제 Safari/실제 기기 검증은 하지 않았다.
+- 공개 페이지 수정의 기존 운영 기반 회귀는 UI72+스크립트8+서버62=142개 통과. v1.3 개발 브랜치의155개 결과와 검증 대상이 다르며 Drive 테스트를 제거한 배포가 아니다. 아직 운영에 적용하지 않은 Drive 코드는 develop/v1.3에 보존한다.
+- 소유권 확인 파일은 아직 받지 않았다. 소유권 검증 성공 시각이 없으므로24시간 대기 시작이나 Google 검증 재제출 완료를 기록하지 않는다. 새 공개 페이지의 URL과 OAuth 동의 화면 링크 정합성은 콘솔 소유자 확인이 필요하다.
