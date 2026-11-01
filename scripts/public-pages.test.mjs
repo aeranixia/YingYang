@@ -15,7 +15,7 @@ test('OAuth public pages include readable HTML and policy links without the Fire
 })
 test('policy distinguishes seven-day server copies, indefinite Drive copies and actual API purposes',()=>{
  const page=publicPages(content).privacy
- for(const phrase of ['서버 PDF와 Drive','7일','보관 기한을 정하지 않고','gmail.send','drive.file','받은편지함','AI 모델 학습','NCII','권리행사','1800-7544'])assert.ok(page.includes(phrase),phrase)
+ for(const phrase of ['서버 PDF','7일','기한 제한 없이','Gmail','Google Drive','받은편지함','AI·기계학습','권리행사','1800-7544'])assert.ok(page.includes(phrase),phrase)
 })
 test('public content escapes markup instead of injecting operator-controlled HTML',()=>{
  const pages=publicPages({...content,operator:'<img src=x onerror=alert(1)>'})
@@ -23,9 +23,8 @@ test('public content escapes markup instead of injecting operator-controlled HTM
  assert.ok(pages.home.includes('&lt;img'))
 })
 
-test('Google policy explains access, use, recipients, storage and deletion for every integration',()=>{
- assert.equal(content.googleData.length,3)
- for(const service of content.googleData)for(const field of ['service','access','use','share','storage','deletion'])assert.ok(typeof service[field]==='string'&&service[field].length>10,service.service+':'+field)
+test('concise Google policy retains essential disclosures without operational details',()=>{
  const page=publicPages(content).privacy
- for(const field of ['YingYang 개인정보처리방침','프로필 사진 URL','공유·전달 대상','보관 기간과 삭제 방법','권한 회수만으로','Limited Use','범용 AI','정책 버전'])assert.ok(page.includes(field),field)
+ for(const field of ['YingYang 개인정보처리방침','Google 데이터의 접근과 사용','공유 대상과 사용 제한','보관 기간과 삭제','정보 보호','권리행사·동의 거부·문의','Limited Use','정책 버전'])assert.ok(page.includes(field),field)
+ for(const detail of ['Secret Manager','체크섬','gmail.send','drive.file','프로필 사진 URL'])assert.ok(!page.includes(detail),detail)
 })
