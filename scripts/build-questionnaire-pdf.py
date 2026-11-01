@@ -15,8 +15,8 @@ root = Path(__file__).resolve().parents[1]
 source = root / "docs/questionnaire-review-v1.2.0.md"
 output = root / "docs/questionnaire-review-v1.2.0.pdf"
 font = next((p for p in [
-    Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
     Path("/usr/share/fonts/truetype/nanum/NanumGothic.ttf"),
+    Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
     Path("/usr/share/fonts/truetype/nanum/NanumBarunGothic.ttf"),
 ] if p.exists()), None)
 if font is None:
@@ -31,8 +31,8 @@ styles = {
 }
 def fmt(s):
     s=escape(s)
-    s=re.sub(r"\\*\\*(.*?)\\*\\*",r"<b>\\1</b>",s)
-    s=re.sub(r"`([^`]+)`",r"\\1",s)
+    s=re.sub(r"\*\*(.*?)\*\*", lambda m: "<b>"+m.group(1)+"</b>", s)
+    s=re.sub(r"`([^`]+)`", lambda m: m.group(1), s)
     return s
 story=[]
 for raw in source.read_text(encoding="utf-8").splitlines():
