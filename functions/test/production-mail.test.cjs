@@ -44,7 +44,7 @@ test('production known pre-send failure retries; unknown outcome survives renewe
  await assert.rejects(send(request({...data,requestId:randomUUID()}),uid,config(),key),e=>e.outcomeUnknown);assert.equal(calls,2)
 })
 test('production MIME keeps fixed envelope, private-neutral subject and Korean PDF filename',async()=>{
- const bytes=await composeProductionMail(config(),{filename:'가상테스터_1234.pdf',content:Buffer.from('%PDF-synthetic')},randomUUID()),text=bytes.toString()
+ const bytes=await composeProductionMail(config(),{filename:'261101_가상테스터_1234.pdf',content:Buffer.from('%PDF-synthetic')},randomUUID()),text=bytes.toString()
  assert.ok(text.includes('To: synthetic@naver.com'));assert.ok(text.includes('From: synthetic@gmail.com'));assert.ok(!/^Cc:|^Bcc:/mi.test(text));assert.ok(text.includes('application/pdf'));bytes.fill(0)
 })
 test('production PDF preserves A4 single-page Korean report without test or mock labels',async()=>{

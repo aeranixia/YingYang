@@ -1,5 +1,7 @@
 ﻿.admin-app{--admin-ink:#203c34;--admin-muted:#60746b;--admin-line:#dce5df;--admin-green:#225747;max-width:1240px;margin:auto;padding:0 32px 48px;font-size:1rem;color:var(--admin-ink);line-height:1.6}
 .admin-app *{box-sizing:border-box}
+.admin-app .admin-drive-form fieldset{display:block;width:100%;max-width:100%;min-width:0}.admin-app .admin-drive-form legend{display:block;width:auto;max-width:100%;font-size:1.1rem;margin-bottom:20px}.admin-app .admin-drive-form label{margin-bottom:20px}.admin-app .admin-drive-check input{width:24px;height:24px;min-height:24px;flex:0 0 24px;margin:0;padding:0}
+.admin-drive-form{max-width:680px;margin:24px 0}.admin-drive-form fieldset{display:grid;gap:20px}.admin-drive-form label{display:grid;gap:8px}.admin-drive-form input:not([type=checkbox]),.admin-drive-form select{font:inherit;min-width:0;width:100%;min-height:48px;padding:12px;border:1px solid #96aa9e;border-radius:8px}.admin-drive-form .admin-drive-check{display:flex;align-items:center;gap:12px;min-height:48px}.admin-drive-check input{width:24px;height:24px}.admin-drive-form button{justify-self:start}.admin-drive .admin-notice p{margin:10px 0}.admin-drive{overflow-wrap:anywhere;min-width:0}
 .admin-app [hidden]{display:none!important}
 .admin-app .admin-top{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:26px 0;border-bottom:1px solid var(--admin-line)}
 .admin-kicker{display:block;color:var(--admin-muted);font-size:.8rem;font-weight:650;letter-spacing:.035em}

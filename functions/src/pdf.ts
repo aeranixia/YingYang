@@ -11,7 +11,7 @@ export function formatCompletion(date: Date | null): string {
 }
 export async function createPdf(input: Submission, completedAt: Date | null, mode: 'mock' | 'gmail-test' | 'production' = 'mock'): Promise<Buffer> {
  const scores = calculate(input)
- const doc = new PDFDocument({ size: 'A4', margin: 40, font: join(__dirname, '../../../assets/NanumGothic-Regular.ttf'), info: { Title: mode==='production'?'YingYang report':'YingYang STAGING report', Author: 'YingYang' } })
+ const doc = new PDFDocument({ size: 'A4', margin: 40, font: join(__dirname, '../../../assets/NanumGothic-Regular.ttf'), info: { Title: '체질검사 결과', Author: 'YingYang' } })
  doc.registerFont('korean', join(__dirname, '../../../assets/NanumGothic-Regular.ttf'))
  doc.registerFont('symbols', join(__dirname, '../../../assets/noto-symbols/NotoSansSymbols.ttf'))
  const chunks: Buffer[] = []
@@ -26,7 +26,7 @@ export async function createPdf(input: Submission, completedAt: Date | null, mod
    doc.font('korean').fontSize(size).fillColor(color).text(value, x, y, { width: boxWidth, align, lineBreak: false })
   }
   text(mode === 'production' ? 'YingYang · 검사 결과' : mode === 'mock' ? 'STAGING · 가상 정보 · 모의 처리 전용' : 'STAGING · 가상 정보 · 실제 이메일 테스트', left, 40, 12, width, '#98420e')
-  text('YingYang 검사 결과지', left, 76, 29, width)
+  text('체질검사 결과', left, 76, 29, width)
   doc.moveTo(left, 124).lineTo(left + width, 124).strokeColor('#203d34').lineWidth(2).stroke()
   const details = [['이름', input.name], ['전화번호', input.phone], ['검사 완료 확인 일시 (KST)', formatCompletion(completedAt)]]
   details.forEach(([label, value], i) => {

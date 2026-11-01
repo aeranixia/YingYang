@@ -1,3 +1,4 @@
+import { validReportName } from './report-name'
 import MailComposer from 'nodemailer/lib/mail-composer'
 import { runtimeToken } from './mail-state'
 import type { Attachment } from './sender'
@@ -25,7 +26,7 @@ export async function refreshGmailToken(config: MailConfig): Promise<string> {
 }
 export async function composeTestMail(config: Pick<MailConfig, 'sender' | 'recipient'>, attachment: Attachment, operation: string): Promise<Buffer> {
  if (!/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(config.sender) || !/^[a-zA-Z0-9._%+-]+@naver\.com$/.test(config.recipient) || !/^[0-9a-f-]{36}$/.test(operation)) throw new Error('Invalid test envelope')
- if (!/^[\p{L}\p{N} -]{1,30}_\d{4}\.pdf$/u.test(attachment.filename) || attachment.content.length > 1048576 || attachment.content.subarray(0,5).toString() !== '%PDF-') throw new Error('Invalid test attachment')
+ if (!validReportName(attachment.filename) || attachment.content.length > 1048576 || attachment.content.subarray(0,5).toString() !== '%PDF-') throw new Error('Invalid test attachment')
  return new MailComposer({ from: config.sender, to: config.recipient, subject: '[STAGING] YingYang 가상 검사 결과', text: '가상 검진 자료의 테스트 발송입니다. 실제 상담 접수가 아닙니다. 확인 후 테스트 메일과 첨부 사본을 정리해 주세요.', messageId: `<${operation}@yingyangtest.web.app>`, attachments: [{ filename: attachment.filename, content: attachment.content, contentType: 'application/pdf' }], disableFileAccess: true, disableUrlAccess: true }).compile().build()
 }
 export async function dispatchGmail(config: MailConfig, attachment: Attachment, operation: string, accessToken: string): Promise<void> {

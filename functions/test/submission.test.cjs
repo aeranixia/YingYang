@@ -23,8 +23,8 @@ test('server recalculates exact counts and original classification totals', () =
 })
 
 test('safe attachment name includes only name and phone last four', () => {
- assert.equal(attachmentName(input()),'가상테스터_1234.pdf')
- assert.equal(attachmentName({name:'../가상\n테스터',phone:'01000005678'}),'가상테스터_5678.pdf')
+ assert.equal(attachmentName(input(),new Date('2026-11-01T00:00:00Z')),'261101_가상테스터_1234.pdf')
+ assert.equal(attachmentName({name:'../가상\n테스터',phone:'01000005678'},new Date('2026-11-01T00:00:00Z')),'261101_가상테스터_5678.pdf')
  assert.throws(()=>attachmentName({name:'../',phone:'1234'}),InputError)
 })
 
@@ -35,6 +35,7 @@ test('A4 one-page PDF embeds Korean, symbols, dates and both score tables', asyn
  const loading=getDocument({data:new Uint8Array(bytes),isEvalSupported:false,useSystemFonts:false})
  const pdf=await loading.promise
  assert.equal(pdf.numPages,1)
+ assert.equal((await pdf.getMetadata()).info.Title,'체질검사 결과')
  const page=await pdf.getPage(1), text=(await page.getTextContent({disableNormalization:true})).items.map(x=>x.str).join(' ')
  for(const value of ['가상테스터','01000001234','2026-10-27','후천적 체질','타고난 체질','①','②','③','④','가','나','다','라','10회','80점','체질 판정을 제공하지 않습니다']) assert.ok(text.includes(value),value)
  assert.ok(Math.abs(page.view[2]-595.28)<1);assert.ok(Math.abs(page.view[3]-841.89)<1)
@@ -45,7 +46,7 @@ test('mock sender receives PDF and safe filename; buffer discarded, receipt cont
  let buffer, filename
  const service=createSubmissionService({send:async a=>{buffer=a.content;filename=a.filename;assert.ok(a.content.length>1000)}})
  const data=input(),result=await service(data,'tester',key)
- assert.equal(filename,'가상테스터_1234.pdf');assert.ok(buffer.every(x=>x===0))
+ assert.match(filename,/^\d{6}_가상테스터_1234\.pdf$/);assert.ok(buffer.every(x=>x===0))
  assert.deepEqual(result,{status:'mock-completed',requestId:data.requestId,duplicate:false})
 })
 

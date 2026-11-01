@@ -152,3 +152,7 @@ const adminHandler = (download: boolean) => onCall(callableOptions, async reques
 })
 export const listAdminReports = adminHandler(false)
 export const downloadAdminReport = adminHandler(true)
+
+import { createDriveAdmin } from './staging-drive'
+export { stagingDriveBackup } from './staging-drive'
+export const adminDriveBackup=createDriveAdmin(r=>identity().authorize(identityContext(r)))

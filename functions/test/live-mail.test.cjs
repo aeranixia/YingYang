@@ -27,7 +27,7 @@ test('tickets reject tamper, expiry, other identity, receiver and payload; no cl
 })
 test('persistent sent marker survives new service instance; metadata stores no identity or PDF; buffer cleared',async()=>{
  const store=new Memory(),data=input(),r=request(data),cfg=config();let count=0,buffer
- const dispatch=async(c,a)=>{count++;buffer=a.content;assert.equal(a.filename,'가상테스터_1234.pdf')}
+ const dispatch=async(c,a)=>{count++;buffer=a.content;assert.equal(a.filename,'261027_가상테스터_1234.pdf')}
  const first=createLiveService(store,dispatch,async()=>'fake',()=>epoch,pdf)
  assert.equal((await first(r,uid,cfg,key)).duplicate,false)
  assert.equal((await createLiveService(store,dispatch,async()=>'fake',()=>epoch,pdf)(r,uid,cfg,key)).duplicate,true)
@@ -58,7 +58,7 @@ test('fifty-per-Korea-day budget is shared across service restarts and corruptio
  await assert.rejects(createLiveService(store,async()=>calls++,async()=>'fake',()=>epoch,pdf)(request(input()),uid,cfg,key),{code:'resource-exhausted'});assert.equal(calls,50)
 })
 test('MIME attachment is PDF, fixed To/From, encoded Korean filename, no CC/BCC',async()=>{
- const data=Buffer.from('%PDF-synthetic'),bytes=await composeTestMail(config(),{filename:'가상테스터_1234.pdf',content:data},randomUUID()),text=bytes.toString()
+ const data=Buffer.from('%PDF-synthetic'),bytes=await composeTestMail(config(),{filename:'261027_가상테스터_1234.pdf',content:data},randomUUID()),text=bytes.toString()
  assert.ok(text.includes('To: synthetic.receiver@naver.com'));assert.ok(text.includes('From: synthetic.sender@gmail.com'))
  assert.ok(text.includes('application/pdf'));assert.ok(text.includes(data.toString('base64')))
  assert.ok(text.includes('%EA%B0%80'));assert.ok(!/^Bcc:|^Cc:/mi.test(text));bytes.fill(0)

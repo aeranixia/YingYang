@@ -57,4 +57,4 @@ function Staging() {
   <footer>로그인 상태는 새로고침하면 해제됩니다. 검진 응답·글자 크기·동의 증명과 보관 기간은 이 브라우저에 저장하며, 이름·전화번호는 저장하지 않습니다.</footer>
  </main></div>
 }
-createRoot(document.getElementById('root')!).render(location.pathname==='/admin'?<AdminPortal auth={auth} functions={getFunctions(app,'asia-northeast3')}/>:<Staging />)
+createRoot(document.getElementById('root')!).render(location.pathname==='/admin'?<AdminPortal driveBackup environmentLabel="v1.3.0 STAGING" auth={auth} functions={getFunctions(app,'asia-northeast3')}/>:<Staging />)

@@ -7,8 +7,8 @@ const key='synthetic-admin-test-signing-key-32-characters'
 const context={project:'yingyangtest',uid:'synthetic-admin',app:true,role:'admin'}
 class Store {
  constructor(){this.data=new Map();this.n=0;this.reads=0}
- async read(name){this.reads++;const x=this.data.get(name);return x?{bytes:Buffer.from(x.bytes),generation:x.generation}:null}
- async write(name,bytes,type,generation){const x=this.data.get(name);if((x?.generation||'0')!==generation)throw new ArchiveConflict();this.data.set(name,{bytes:Buffer.from(bytes),generation:String(++this.n)})}
+ async read(name){this.reads++;const x=this.data.get(name);return x?{bytes:Buffer.from(x.bytes),generation:x.generation,filename:x.filename}:null}
+ async write(name,bytes,type,generation,filename){const x=this.data.get(name);if((x?.generation||'0')!==generation)throw new ArchiveConflict();this.data.set(name,{bytes:Buffer.from(bytes),generation:String(++this.n),filename})}
  async remove(name){this.data.delete(name)}
  async list(prefix,cursor){const names=[...this.data.keys()].filter(x=>x.startsWith(prefix)).sort();return {names:names.slice(Number(cursor||0),Number(cursor||0)+2),...(names.length>Number(cursor||0)+2?{nextCursor:String(Number(cursor||0)+2)}:{})}}
 }
@@ -26,6 +26,13 @@ test('masked metadata excludes identity/answers; PDF is private separate object,
  assert.ok([...store.data.keys()].some(x=>x.startsWith('access/')))
  const audits=[...store.data].filter(([name])=>name.startsWith('access/'));assert.equal(JSON.stringify(audits.map(x=>x[1].bytes.toString())).includes(context.uid),false)
 })
+test('email and administrator use the same real-name filename and original KST date across midnight retry',async()=>{
+ let now=Date.parse('2026-11-01T14:59:00Z'),names=[];const store=new Store(),archive=new ReportArchive(store,()=>now),data=input()
+ const service=createSubmissionService({send:async a=>{names.push(a.filename);if(names.length===1)throw Error('Synthetic before-send failure')}},()=>now,async()=>pdf(),archive)
+ await assert.rejects(service(data,context.uid,key));now+=120000;await service(data,context.uid,key)
+ const page=await archive.page({},context,key),download=await archive.download({id:page.reports[0].id},context,key)
+ assert.deepEqual(names,['261101_가상테스터_1234.pdf','261101_가상테스터_1234.pdf']);assert.equal(download.filename,names[0]);assert.equal(JSON.stringify(page).includes('가상테스터'),false)
+})
 test('server requires admin claim, staging project and App Check before reading archive',async()=>{
  const store=new Store(),archive=new ReportArchive(store)
  for(const c of [{...context,project:'yingyangcheck'},{...context,app:false},{...context,uid:undefined},{...context,role:undefined},{...context,role:'none'}]){
@@ -36,7 +43,7 @@ test('server requires admin claim, staging project and App Check before reading 
 test('failed PDF download expires at exact seven-day boundary, deletes expired object and records access',async()=>{
  let now=Date.now();const store=new Store(),archive=new ReportArchive(store,()=>now),id=randomUUID(),start=now
  await archive.capture(input(),pdf(),id,'mock');await archive.update(id,'failed','mock-failed')
- now=start+archiveDays-1;const got=await archive.download({id},context,key);assert.equal(Buffer.from(got.base64,'base64').subarray(0,5).toString(),'%PDF-');assert.equal(got.filename,'가＊＊＊터(1234).pdf');assert.equal(/[<>:"/\\|?*\x00-\x1f]/.test(got.filename),false);assert.equal(got.filename.includes('가상테스터'),false)
+ now=start+archiveDays-1;const got=await archive.download({id},context,key);assert.equal(Buffer.from(got.base64,'base64').subarray(0,5).toString(),'%PDF-');assert.match(got.filename,/^\d{6}_가상테스터_1234\.pdf$/);assert.equal(/[<>:"/\\|?*\x00-\x1f]/.test(got.filename),false);assert.equal(got.filename.includes('가상테스터'),true)
  now=start+archiveDays;await assert.rejects(archive.download({id},context,key),e=>e.code==='failed-precondition');assert.equal(store.data.has('pdf/'+id+'.pdf'),false)
  assert.equal((await archive.page({},context,key)).reports.length,0)
  assert.ok([...store.data].filter(([n])=>n.startsWith('access/')).some(([,v])=>JSON.parse(v.bytes.toString()).outcome==='expired'))

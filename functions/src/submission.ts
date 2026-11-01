@@ -2,6 +2,7 @@ import { createHmac } from 'node:crypto'
 import { aggregate, fresh, VERSION } from '../../src/engine'
 import { consentVersion, syntheticNames, syntheticPhones, type Submission } from '../../src/staging/contracts'
 import { validPatientIdentity } from '../../src/production/contracts'
+import { reportName } from './report-name'
 
 export class InputError extends Error {}
 const exact = (value: unknown, keys: string[]): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).sort().join(',') === keys.sort().join(',')
@@ -26,10 +27,10 @@ export function validateSubmission(raw: unknown, expectedConsentVersion = consen
 export function calculate(input: Submission) {
  return { acquired: aggregate({ ...fresh('acquired'), answers: input.acquired, completed: true }), innate: aggregate({ ...fresh('innate'), answers: input.innate, completed: true }) }
 }
-export function attachmentName(input: Pick<Submission, 'name' | 'phone'>) {
+export function attachmentName(input: Pick<Submission, 'name' | 'phone'>,date=new Date()) {
  const name = input.name.normalize('NFC').replace(/[^\p{L}\p{N} -]/gu, '').trim().slice(0, 30)
  if (!name || !/^\d{10,11}$/.test(input.phone)) throw new InputError('Invalid filename identity')
- return `${name}_${input.phone.slice(-4)}.pdf`
+ return reportName(name,input.phone.slice(-4),date)
 }
 export function fingerprint(input: Submission, key: string) {
  return createHmac('sha256', key).update(JSON.stringify(input)).digest('hex')

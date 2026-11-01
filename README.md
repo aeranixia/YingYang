@@ -6,7 +6,7 @@ YingYang은 **후천적 체질 검진**과 **타고난 체질 검진**을 제공
 
 - **서비스:** https://yingyangcheck.web.app
 - **관리자 페이지:** https://yingyangcheck.web.app/admin
-- **버전:** v1.2.0
+- **버전:** v1.3.0 (운영 전환 검증 중)
 
 ## 이용 안내
 
@@ -51,3 +51,7 @@ YingYang은 **후천적 체질 검진**과 **타고난 체질 검진**을 제공
 ---
 
 YingYang · v1.2.0
+
+## v1.3 Drive 백업
+
+PDF 제목은 체질검사 결과, 신규 PDF 파일명은 YYMMDD_실명이름_전화번호끝4자리.pdf입니다. 마스터만 Drive 백업 설정·상태·재시도를 관리합니다. Drive 사본은 무기한 유지되며 앱에 삭제 기능은 없습니다. 기존 관리자 다운로드는 7일입니다. 환경별 OAuth·Secret·저장소·폴더를 분리합니다. [구현/검증 기록](docs/v1.3-drive-implementation.md)에서 완료 항목과 미검증 범위를 확인하세요.
