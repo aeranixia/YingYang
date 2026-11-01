@@ -1,4 +1,6 @@
-# YingYang v1.1.1
+# YingYang v1.2.0
+
+운영 주소는 https://yingyangcheck.web.app 이며 관리자는 `/admin`에서 승인된 Google 계정으로 로그인합니다. 사용자의 운영 전환·이메일 활성화 승인에 따라 운영 전용 Auth/App Check·서버 집계·PDF·Gmail 경로를 구성했습니다. 현재 상태는 [운영 이메일 전송](docs/production-mail-activation.md)과 [검증 기록](docs/verification.md)을 확인하세요. 아래 Staging 단계 설명은 과거 개발 기록입니다.
 
 Staging [D단계 종합 검증](docs/staging-d.md)과 발견 문제 수정을 완료했습니다. [E단계 준비](docs/staging-e-preparation.md)는 Gmail 발신·네이버 테스트 수신을 기준으로 하며 한의원 운영 수신 주소/서비스는 미정입니다. 실제 OAuth·메일·공유 저장소·운영 반영은 별도 승인 대상입니다.
 
@@ -6,7 +8,7 @@ Staging [D단계 종합 검증](docs/staging-d.md)과 발견 문제 수정을 �
 
 `develop/v1.2`에는 별도 [Staging A단계](docs/staging-a.md)가 추가되어 있습니다. 테스트 주소는 https://yingyangtest.web.app 이며 가상 테스트 계정으로만 서버에 접근합니다. 운영 앱은 v1.1.1을 유지합니다. 이 브랜치에서는 `npm.cmd run deploy:staging`만 사용하고 운영에 배포하지 않습니다. 전용 진입점·Functions·접근 방법·비용·검증 한계는 위 문서를 확인하세요.
 
-나의 체질을 알아보는 두 가지 진단. React + TypeScript + Vite + Tailwind CSS로 만든 모바일 우선 정적 웹앱입니다. 백엔드와 데이터베이스 없이 브라우저에서 작동합니다.
+나의 체질을 알아보는 두 가지 진단. React + TypeScript + Vite + Tailwind CSS로 만든 모바일 우선 웹앱입니다. Firebase Hosting과 Functions를 사용하며 Firestore·Redis는 사용하지 않습니다. 체질 판정 알고리즘은 제공하지 않습니다.
 
 ## 실행
 
