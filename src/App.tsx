@@ -14,7 +14,7 @@ function CompletedResult({ state }: { state: Session }) {
  return <details className="completed-result"><summary>{state.kind === 'acquired' ? '후천적' : '타고난'} 체질 결과 보기</summary><div className="panel"><Result state={state}/></div></details>
 }
 export default function App({ submission, onSessionsChange, sessionStore, edition, onTextSizeChange }: { edition?: string; onTextSizeChange?: (size: TextSize) => void; submission?: (states: Record<Kind, Session>) => ReactNode; onSessionsChange?: (states: Record<Kind, Session>, newlyCompleted: boolean) => void; sessionStore?: { read: (kind: Kind) => Session; save: (state: Session) => void } } = {}) {
- const production = edition === 'v1.2.0'
+ const production = edition === 'v1.2.0' || edition === 'v1.3.0'
  const [states, setStates] = useState<Record<Kind, Session>>(() => ({ acquired: (sessionStore?.read || read)('acquired'), innate: (sessionStore?.read || read)('innate') }))
  const [view, setView] = useState<View>('home'), [warning, setWarning] = useState('')
  const [review, setReview] = useState(false), [reset, setReset] = useState<Kind | null>(null)

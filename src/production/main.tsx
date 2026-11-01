@@ -41,6 +41,6 @@ function Production(){
  async function start(){setError('');try{await auth.authStateReady();let user=auth.currentUser;if(user&&(!user.isAnonymous||Date.now()-Date.parse(user.metadata.creationTime||'')>=7*86400000)){if(user.isAnonymous)try{await deleteUser(user)}catch{await signOut(auth)}else await signOut(auth);user=null}if(!user)await signInAnonymously(auth);const status=await call<{sendEnabled:boolean}>({});setEnabled(status.sendEnabled===true);setReady(true)}catch{setError('검사 세션을 준비하지 못했습니다. 연결 또는 브라우저 보안 설정을 확인해 주세요.')}}
  useEffect(()=>{void start()},[])
  if(!ready)return <main className="shell"><h1>YingYang</h1><p role="status">{error||'검사 세션을 준비하고 있습니다…'}</p>{error&&<button className="primary" onClick={()=>void start()}>다시 시도</button>}</main>
- return <><div className="staging-ribbon">YingYang v1.2.0 {enabled?'':'· 이메일 전송 중지'}</div><PrivacyGate production authorize={authorize} verify={verify} confirm={confirm} send={send} renderSubmission={props=>enabled?<ProductionSubmission {...props} send={sendProduction}/>:<ClosedSubmission/>}/></>
+ return <><div className="staging-ribbon">YingYang v1.3.0 {enabled?'':'· 이메일 전송 중지'}</div><PrivacyGate production authorize={authorize} verify={verify} confirm={confirm} send={send} renderSubmission={props=>enabled?<ProductionSubmission {...props} send={sendProduction}/>:<ClosedSubmission/>}/></>
 }
-createRoot(document.getElementById('root')!).render(admin?<AdminPortal auth={auth} functions={functions} environmentLabel="v1.2.0"/>:<Production/>)
+createRoot(document.getElementById('root')!).render(admin?<AdminPortal auth={auth} functions={functions} environmentLabel="v1.3.0" driveBackup/>:<Production/>)

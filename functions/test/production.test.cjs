@@ -62,3 +62,13 @@ test('active production prepares a signed ticket only for anonymous consented va
  await assert.rejects(handlers.prepareReport.run(wrap(data)),e=>e.code==='permission-denied')
  assert.equal(gmailCalls,0)
 })
+
+test('production Drive management uses production state and rejects ordinary, stale or cross-project callers',async()=>{
+ const status=await handlers.adminDriveBackup.run(wrap({action:'status'}));assert.equal(status.config.enabled,false);assert.equal(status.owner,'ukclinic.official@gmail.com');assert.equal(status.deletionAvailable,false)
+ await assert.rejects(handlers.adminDriveBackup.run(wrap({action:'status'},'ordinary')),e=>e.code==='permission-denied')
+ await assert.rejects(handlers.adminDriveBackup.run({...wrap({action:'status'}),app:undefined}),e=>e.code==='permission-denied')
+ await assert.rejects(handlers.adminDriveBackup.run(wrap({action:'delete',id:'ignored'})),e=>e.code==='invalid-argument')
+ const stale=wrap({action:'retry',id:'ignored'});stale.auth.token.auth_time=1;await assert.rejects(handlers.adminDriveBackup.run(stale),e=>e.code==='failed-precondition')
+ process.env.GCLOUD_PROJECT='yingyangtest';try{await assert.rejects(handlers.adminDriveBackup.run(wrap({action:'status'})),e=>e.code==='permission-denied')}finally{process.env.GCLOUD_PROJECT='yingyangcheck'}
+ assert.equal(gmailCalls,0)
+})
