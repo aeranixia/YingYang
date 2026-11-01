@@ -10,5 +10,7 @@ export function validateProduction({config,sdk,html,assets,env}) {
 export function checkProduction(){
  const read=p=>fs.readFileSync(p,'utf8'),source=read('src/production/public-config.ts'),sdk=JSON.parse(source.slice(source.indexOf('{'),source.lastIndexOf('}')+1))
  const assets=fs.readdirSync('dist/assets').filter(p=>p.endsWith('.js')).map(p=>read('dist/assets/'+p)).join('')
+ const home=read('dist/index.html'),exam=read('dist/exam.html'),privacy=read('dist/privacy.html')
+ if(!home.includes('href="/privacy"')||home.includes('type="module"')||!privacy.includes('개인정보처리방침')||!exam.includes('yingyang-environment" content="production'))throw Error('공개 홈페이지·정책·검사 진입 분리를 확인해 주세요.')
  return validateProduction({config:JSON.parse(read('firebase.json')),sdk,html:read('dist/index.html'),assets,env:read('functions/.env.yingyangcheck')})
 }

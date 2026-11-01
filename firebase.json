@@ -3,7 +3,13 @@
     "site": "yingyangcheck",
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [{"source":"**","destination":"/index.html"}],
+    "rewrites": [
+      {"source":"/privacy{,/**}","destination":"/privacy.html"},
+      {"source":"/terms{,/**}","destination":"/terms.html"},
+      {"source":"/exam{,/**}","destination":"/exam.html"},
+      {"source":"/admin{,/**}","destination":"/exam.html"},
+      {"source":"**","destination":"/index.html"}
+    ],
     "headers": [
       {
         "source": "**",
