@@ -64,7 +64,16 @@ test('Staging backup callable rejects ordinary admin, missing App Check, stale m
  process.env.GCLOUD_PROJECT='yingyangcheck';await assert.rejects(master.run(request({action:'status'})),e=>e.code==='permission-denied')
 })
 
-test('Google adapter rejects link-readable backup folders before any upload',async()=>{
+test('Google adapter accepts owner-controlled folders with link-viewer access without changing sharing',async()=>{
  const methods=[];mock.method(global,'fetch',async(_url,options={})=>{methods.push(options.method||'GET');return Response.json({name:'YingYang_검진결과_백업',mimeType:'application/vnd.google-apps.folder',shared:true,owners:[{emailAddress:'ukclinic.official@gmail.com'}],capabilities:{canAddChildren:true},permissions:[{type:'anyone',role:'reader'},{type:'user',role:'owner',emailAddress:'ukclinic.official@gmail.com'}]})})
- try{await assert.rejects(new GoogleDriveUpload('synthetic-token').checkFolder('virtual-private-folder'),e=>e.code==='permission');assert.deepEqual(methods,['GET'])}finally{mock.restoreAll()}
+ try{await new GoogleDriveUpload('synthetic-token').checkFolder('virtual-private-folder');assert.deepEqual(methods,['GET'])}finally{mock.restoreAll()}
+})
+
+test('Google adapter still rejects shared writers, other owners and missing owner permissions',async()=>{
+ const owner={type:'user',role:'owner',emailAddress:'ukclinic.official@gmail.com'}
+ const folder={name:'YingYang_검진결과_백업',mimeType:'application/vnd.google-apps.folder',shared:true,owners:[{emailAddress:owner.emailAddress}],capabilities:{canAddChildren:true}}
+ for(const permissions of [[owner,{type:'anyone',role:'writer'}],[owner,{type:'user',role:'writer',emailAddress:'other@example.invalid'}],[{...owner,emailAddress:'other@example.invalid'}],[{type:'anyone',role:'reader'}]]){
+  mock.method(global,'fetch',async()=>Response.json({...folder,permissions}))
+  try{await assert.rejects(new GoogleDriveUpload('synthetic-token').checkFolder('virtual-shared-folder'),e=>e.code==='permission')}finally{mock.restoreAll()}
+ }
 })
