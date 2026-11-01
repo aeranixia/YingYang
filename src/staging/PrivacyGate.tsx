@@ -108,13 +108,17 @@ export function PrivacyGate({ authorize, verify, confirm, send, production=false
    <p>{production?'검사 응답의 자동 저장·이어하기, 서버 완료 확인·재집계 및 PDF 작성에 사용합니다. 이름·전화번호는 브라우저에 영구 저장하지 않습니다. 결과 전송은 검사 완료 후 별도 동의를 확인합니다.':'가상 응답의 자동 저장·이어하기, 서버 완료 확인·재집계, PDF 생성과 모의 처리에 사용합니다. 이름·전화번호는 검사 후 가상 정보만 입력하며 브라우저에 영구 저장하지 않습니다.'}</p>
    <p>검사 시작·이어하기와 응답의 서버 전송 전에 아래 두 항목에 각각 동의해 주세요. 서버 동의 확인 요청에는 검사 응답을 넣지 않습니다.</p>
    <p>{clinicName}에 예약하고 방문할 예정인 환자의 진료 준비를 위한 사전 검사입니다. {!production&&'현재 Staging에서는 지정된 가상 정보만 사용합니다.'} 문의: {privacyDepartment} (접수 및 처리), {privacyContact}.</p>
-   <h2>개인정보 수집·이용</h2><p>{preExamPersonal}</p>
-   <h2>건강 관련 민감정보 처리</h2><p>{preExamSensitive}</p>
+   <div className="privacy-consents">
+   <section className="privacy-consent-card"><h2><span aria-hidden="true">01</span> 개인정보 수집·이용</h2><p>{preExamPersonal}</p>
+   <label className="consent-check"><input type="checkbox" checked={personal} onChange={e => setPersonal(e.target.checked)} disabled={busy}/><span>개인정보 수집·이용에 동의합니다</span></label></section>
+   <section className="privacy-consent-card"><h2><span aria-hidden="true">02</span> 건강 관련 민감정보 처리</h2><p>{preExamSensitive}</p>
+   <label className="consent-check"><input type="checkbox" checked={sensitive} onChange={e => setSensitive(e.target.checked)} disabled={busy}/><span>건강 관련 민감정보 처리에 별도로 동의합니다</span></label></section>
+   </div>
+   <aside className="privacy-retention"><h2>보관과 동의 거부 안내</h2>
    <p>{adminArchiveNotice}</p>
    <p>이름·전화번호 및 PDF 처리 동의는 검사 후 별도로 확인합니다. 위 개인정보처리방침에서 보관·삭제와 권리행사 방법을 확인할 수 있습니다.</p>
    <p>거부할 수 있으며 거부 시 검사의 저장·이어하기·완료 확인·결과 전송은 이용할 수 없습니다. 다른 진료·상담 전체의 제한을 뜻하지 않습니다.</p>
-   <label className="consent-check"><input type="checkbox" checked={personal} onChange={e => setPersonal(e.target.checked)} disabled={busy}/>개인정보 수집·이용에 동의합니다</label>
-   <label className="consent-check"><input type="checkbox" checked={sensitive} onChange={e => setSensitive(e.target.checked)} disabled={busy}/>건강 관련 민감정보 처리에 별도로 동의합니다</label>
+   </aside>
    {legacy && <aside className="notice"><h2>기존 저장 데이터가 있습니다</h2><p>기존 자료의 실제 저장일을 알 수 없습니다. 이전을 선택하면 해당 자료는 지금부터 7일로 계산합니다. 선택 전 임의로 이전하거나 삭제하지 않습니다.</p></aside>}
    <button className="primary" disabled={busy || !personal || !sensitive} onClick={() => void accept(legacy)}>{busy ? '동의 확인 중…' : legacy ? '이전해 이어하기' : '동의하고 검사 시작·이어하기'}</button>
    {legacy && <button className="secondary" disabled={busy} onClick={() => setRemoval(true)}>삭제하고 새로 시작</button>}

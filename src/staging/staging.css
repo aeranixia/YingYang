@@ -3,6 +3,22 @@
 .privacy-panel button { min-height: 44px; margin: 8px 8px 8px 0; max-width: 100%; white-space: normal; }
 .privacy-panel .consent-check { display: flex; gap: 12px; align-items: center; min-height: 44px; margin: 16px 0; }
 .privacy-panel { font-size: 1.125rem; line-height: 1.65; }
+.privacy-panel { width:calc(100% - 40px); max-width:920px; padding:32px; margin:24px auto; line-height:1.85; word-break:keep-all; overflow-wrap:anywhere; }
+.privacy-panel h1 { font-size:clamp(1.625rem,3.5vw,2rem); letter-spacing:-.04em; line-height:1.45; margin:0 0 24px; }
+.privacy-panel h2 { font-size:1.125em; line-height:1.5; letter-spacing:-.025em; margin:0 0 16px; }
+.privacy-panel p { margin:0 0 20px; }
+.privacy-panel > strong { display:block; margin-bottom:16px; font-size:1.15em; }
+.privacy-panel > .primary { width:100%; justify-content:center; padding:18px 24px; margin:28px 0 0; }
+.privacy-consents { display:grid; gap:24px; margin:32px 0; }
+.privacy-consent-card { min-width:0; border:1px solid #c9d7cf; border-radius:14px; padding:24px; }
+.privacy-consent-card h2 > span { color:#537758; margin-right:10px; font-variant-numeric:tabular-nums; }
+.privacy-panel .privacy-consent-card .consent-check { align-items:flex-start; gap:14px; padding:18px; margin:24px 0 0; border-radius:10px; background:#edf3ed; font-weight:700; line-height:1.65; }
+.privacy-panel .consent-check input { margin:3px 0 0; }
+.privacy-retention { padding:24px; background:#f5f7f2; border-radius:12px; color:#405549; }
+.privacy-retention p:last-child { margin-bottom:0; }
+.privacy-panel .privacy-policy { margin:24px 0; padding:12px 18px; border:1px solid #d8e0d5; border-radius:10px; }
+.privacy-panel .privacy-policy p { margin-bottom:18px; }
+@media(max-width:600px){.privacy-panel{width:calc(100% - 24px);padding:24px 18px;margin:16px auto}.privacy-consent-card,.privacy-retention{padding:20px 16px}.privacy-panel .privacy-consent-card .consent-check{padding:16px 12px}.privacy-panel .privacy-policy{padding:8px 12px}}
 
 .privacy-policy summary { cursor: pointer; min-height: 44px; padding: 12px 0; font-weight: 700; }
 .privacy-policy h2 { font-size: 1.25em; margin-top: 24px; }
