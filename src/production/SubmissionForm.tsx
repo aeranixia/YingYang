@@ -2,7 +2,8 @@ import { useRef, useState, type FormEvent } from 'react'
 import type { Session } from '../engine'
 import type { Submission } from '../staging/contracts'
 import { completionProof, confirmPending } from '../staging/completion'
-import { clinicName, privacyDepartment, privacyContact, pdfPersonal, pdfSensitive, pdfDelivery, mailCopyPolicy, adminArchiveNotice } from '../staging/privacy-copy'
+import { clinicName, privacyDepartment, privacyContact, pdfPersonal, pdfSensitive, mailCopyPolicy, adminArchiveNotice } from '../staging/privacy-copy'
+import { productionPdfDelivery as pdfDelivery } from './privacy-copy'
 import { productionPdfConsentVersion, validPatientIdentity } from './contracts'
 
 export type DeliveryReceipt={status:'gmail-accepted';requestId:string;duplicate:boolean}
