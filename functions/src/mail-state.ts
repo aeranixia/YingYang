@@ -14,7 +14,7 @@ export async function runtimeToken(): Promise<string> {
 }
 export class GcsStateStore implements StateStore {
  constructor(private readonly bucket: string, private readonly token = runtimeToken) {
-  if (bucket !== 'yingyangtest-mail-state-495270334718') throw new Error('Invalid staging bucket')
+  if (!['yingyangtest-mail-state-495270334718','yingyangcheck-mail-state-231582543863'].includes(bucket)) throw new Error('Invalid mail state bucket')
  }
  async read<T>(name: string): Promise<Stored<T> | null> {
   const response = await fetch(`https://storage.googleapis.com/storage/v1/b/${this.bucket}/o/${encodeURIComponent(name)}?alt=media`, { headers: { authorization: `Bearer ${await this.token()}` }, signal: AbortSignal.timeout(5000) })

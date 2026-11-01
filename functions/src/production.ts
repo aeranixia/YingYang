@@ -9,6 +9,11 @@ import { ReportArchive, GcsArchiveStore, AdminError } from './admin-reports'
 import { createLocalLimiter } from './policy'
 import { issuePrivacy, verifyPrivacy } from './privacy'
 import { confirmCompletion } from './completion'
+import { GcsStateStore } from './mail-state'
+import { createLiveService, prepareMailTicket, LiveError, DAILY_MAIL_ATTEMPT_LIMIT } from './live-service'
+import { InputError } from './submission'
+import { createPdf } from './pdf'
+import { activeProductionMail, productionAccess, productionDispatch, productionProtocol } from './production-mail'
 
 const project='yingyangcheck'
 const signingKey=defineSecret('YINGYANG_SIGNING_KEY')
@@ -16,6 +21,9 @@ const mailConfig=defineSecret('YINGYANG_MAIL_CONFIG')
 const options:CallableOptions={region:'asia-northeast3',serviceAccount:'231582543863-compute@developer.gserviceaccount.com',minInstances:0,maxInstances:1,concurrency:1,memory:'512MiB',cpu:1,timeoutSeconds:30,enforceAppCheck:true,cors:['https://yingyangcheck.web.app','https://yingyangcheck.firebaseapp.com'],secrets:[signingKey,mailConfig]}
 const auth=getAuth(getApps()[0]||initializeApp({projectId:project}))
 const archive=new ReportArchive(new GcsArchiveStore('yingyangcheck-admin-reports-231582543863',undefined,project),Date.now,project)
+const mailState=new GcsStateStore('yingyangcheck-mail-state-231582543863')
+const sending=()=>activeProductionMail(JSON.parse(mailConfig.value()),process.env.PRODUCTION_SEND_ENABLED==='true',mailState)
+const deliver=createLiveService(mailState,async(c,a,o,t)=>{const current=await sending();if(current.sender!==c.sender||current.recipient!==c.recipient)throw Error('Configuration changed');await productionDispatch(current,a,o,t)},productionAccess,Date.now,(input,date)=>createPdf(input,date,'production'),archive,productionProtocol)
 function context(r:CallableRequest):IdentityContext {
  const t=r.auth?.token
  return {project:process.env.GCLOUD_PROJECT,uid:r.auth?.uid,app:!!r.app,provider:t?.firebase?.sign_in_provider,email:t?.email,emailVerified:t?.email_verified===true,authTime:t?.auth_time,claims:t}
@@ -34,6 +42,24 @@ export const downloadAdminReport=reports(true)
 const allowExams=createLocalLimiter(30)
 export const examStatus=onCall(options,async r=>{
  gate(r);if(r.auth!.token.firebase?.sign_in_provider!=='anonymous')throw new HttpsError('permission-denied','검사 세션이 필요합니다.');if(!allowExams(Date.now()))throw new HttpsError('resource-exhausted','잠시 후 다시 시도해 주세요.')
- try{const data=r.data,key=signingKey.value(),uid=r.auth!.uid;if(!data||typeof data!=='object'||Array.isArray(data))throw Error();if(!Object.keys(data).length)return {version:'1.2.0',projectId:project,sendEnabled:false};if(data.action==='consent-privacy')return issuePrivacy(data,uid,key,Date.now(),productionPrivacyVersion);if(data.action==='verify-privacy'&&Object.keys(data).sort().join(',')==='action,privacyProof'){return {valid:true,...verifyPrivacy(data.privacyProof,uid,key,Date.now(),productionPrivacyVersion)}}verifyPrivacy(data.privacyProof,uid,key,Date.now(),productionPrivacyVersion);return confirmCompletion(data,uid,key,Date.now(),productionPrivacyVersion)}catch{throw new HttpsError('invalid-argument','동의·검사 응답을 확인해 주세요.')}
+ try{const data=r.data,key=signingKey.value(),uid=r.auth!.uid;if(!data||typeof data!=='object'||Array.isArray(data))throw Error();if(!Object.keys(data).length)return {version:'1.2.0',projectId:project,sendEnabled:await sending().then(()=>true,()=>false),dailyMailAttemptLimit:DAILY_MAIL_ATTEMPT_LIMIT};if(data.action==='consent-privacy')return issuePrivacy(data,uid,key,Date.now(),productionPrivacyVersion);if(data.action==='verify-privacy'&&Object.keys(data).sort().join(',')==='action,privacyProof'){return {valid:true,...verifyPrivacy(data.privacyProof,uid,key,Date.now(),productionPrivacyVersion)}}verifyPrivacy(data.privacyProof,uid,key,Date.now(),productionPrivacyVersion);return confirmCompletion(data,uid,key,Date.now(),productionPrivacyVersion)}catch{throw new HttpsError('invalid-argument','동의·검사 응답을 확인해 주세요.')}
 })
-export const submitReport=onCall(options,async r=>{gate(r,12000);throw new HttpsError('failed-precondition','현재 결과 이메일 전송이 중지되어 있습니다.')})
+const allowMail=createLocalLimiter(5)
+function mailHandler(prepare:boolean){return onCall(options,async r=>{
+ gate(r,12000)
+ let config
+ try{config=await sending()}catch{throw new HttpsError('failed-precondition','Email sending is unavailable.',{outcomeUnknown:false})}
+ if(r.auth!.token.firebase?.sign_in_provider!=='anonymous')throw new HttpsError('permission-denied','Exam session required.',{outcomeUnknown:false})
+ if(!allowMail(Date.now()))throw new HttpsError('resource-exhausted','Please try later.',{outcomeUnknown:false})
+ try{
+  const raw=prepare?r.data:r.data?.submission
+  verifyPrivacy(raw?.privacyProof,r.auth!.uid,signingKey.value(),Date.now(),productionPrivacyVersion)
+  return prepare?prepareMailTicket(raw,r.auth!.uid,config,signingKey.value(),Date.now(),productionProtocol):await deliver(r.data,r.auth!.uid,config,signingKey.value())
+ }catch(e){
+  if(e instanceof LiveError)throw new HttpsError(e.code,'Unable to confirm delivery.',{outcomeUnknown:e.outcomeUnknown})
+  if(e instanceof InputError)throw new HttpsError('invalid-argument','Check input and consent.',{outcomeUnknown:false})
+  throw new HttpsError('unavailable','Unable to process the request.',{outcomeUnknown:!prepare})
+ }
+})}
+export const prepareReport=mailHandler(true)
+export const submitReport=mailHandler(false)

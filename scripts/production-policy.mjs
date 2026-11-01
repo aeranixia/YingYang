@@ -4,7 +4,7 @@ export function validateProduction({config,sdk,html,assets,env}) {
  if(sdk.projectId!=='yingyangcheck'||sdk.authDomain!=='yingyangcheck.firebaseapp.com'||!sdk.appId?.startsWith('1:231582543863:web:')||!sdk.recaptchaSiteKey)throw Error('운영 Firebase 설정을 확인해 주세요.')
  if(!html.includes('yingyang-environment" content="production')||html.includes('staging.html')||assets.includes('yingyangtest.firebaseapp.com')||assets.includes('asia-northeast3-yingyangtest.cloudfunctions.net'))throw Error('운영 빌드에 Staging 설정이 포함되어 있습니다.')
  const values=Object.fromEntries(env.trim().split(/\r?\n/).map(line=>line.split('=')))
- if(values.PRODUCTION_SEND_ENABLED!=='false'||values.YINGYANG_PROJECT_ID!=='yingyangcheck'||Object.keys(values).length!==2)throw Error('운영 전송 차단 설정을 확인해 주세요.')
+ if(!['false','true'].includes(values.PRODUCTION_SEND_ENABLED)||values.YINGYANG_PROJECT_ID!=='yingyangcheck'||Object.keys(values).length!==2)throw Error('운영 전송 차단 설정을 확인해 주세요.')
  return true
 }
 export function checkProduction(){

@@ -9,9 +9,9 @@ export function formatCompletion(date: Date | null): string {
  const get = (type: string) => parts.find(p => p.type === type)!.value
  return `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')}`
 }
-export async function createPdf(input: Submission, completedAt: Date | null, mode: 'mock' | 'gmail-test' = 'mock'): Promise<Buffer> {
+export async function createPdf(input: Submission, completedAt: Date | null, mode: 'mock' | 'gmail-test' | 'production' = 'mock'): Promise<Buffer> {
  const scores = calculate(input)
- const doc = new PDFDocument({ size: 'A4', margin: 40, font: join(__dirname, '../../../assets/NanumGothic-Regular.ttf'), info: { Title: 'YingYang STAGING report', Author: 'YingYang' } })
+ const doc = new PDFDocument({ size: 'A4', margin: 40, font: join(__dirname, '../../../assets/NanumGothic-Regular.ttf'), info: { Title: mode==='production'?'YingYang report':'YingYang STAGING report', Author: 'YingYang' } })
  doc.registerFont('korean', join(__dirname, '../../../assets/NanumGothic-Regular.ttf'))
  doc.registerFont('symbols', join(__dirname, '../../../assets/noto-symbols/NotoSansSymbols.ttf'))
  const chunks: Buffer[] = []
@@ -25,7 +25,7 @@ export async function createPdf(input: Submission, completedAt: Date | null, mod
   const text = (value: string, x: number, y: number, size: number, boxWidth: number, color = '#203d34', align: 'left' | 'right' | 'center' = 'left') => {
    doc.font('korean').fontSize(size).fillColor(color).text(value, x, y, { width: boxWidth, align, lineBreak: false })
   }
-  text(mode === 'mock' ? 'STAGING · 가상 정보 · 모의 처리 전용' : 'STAGING · 가상 정보 · 실제 이메일 테스트', left, 40, 12, width, '#98420e')
+  text(mode === 'production' ? 'YingYang · 검사 결과' : mode === 'mock' ? 'STAGING · 가상 정보 · 모의 처리 전용' : 'STAGING · 가상 정보 · 실제 이메일 테스트', left, 40, 12, width, '#98420e')
   text('YingYang 검사 결과지', left, 76, 29, width)
   doc.moveTo(left, 124).lineTo(left + width, 124).strokeColor('#203d34').lineWidth(2).stroke()
   const details = [['이름', input.name], ['전화번호', input.phone], ['검사 완료 확인 일시 (KST)', formatCompletion(completedAt)]]
@@ -54,7 +54,7 @@ export async function createPdf(input: Submission, completedAt: Date | null, mod
   }
   text('두 검사의 점수는 합산하지 않습니다.', left, 743, 13, width)
   text('체질 판정을 제공하지 않습니다.', left, 765, 13, width)
-  text(mode === 'mock' ? '실제 이메일 미발송 · 서버 PDF 영구 저장 없음' : '가상 이메일 시험 · 서버 PDF 저장 없음 · 메일함 사본 별도 정리', left, 791, 10, width, '#52635a')
+  text(mode === 'production' ? '관리자 PDF 임시 보관 7일 · 메일 사본 별도 관리' : mode === 'mock' ? '실제 이메일 미발송 · 서버 PDF 영구 저장 없음' : '가상 이메일 시험 · 서버 PDF 저장 없음 · 메일함 사본 별도 정리', left, 791, 10, width, '#52635a')
   doc.end()
  } catch { doc.destroy(new Error('PDF generation failed')) }
  return output

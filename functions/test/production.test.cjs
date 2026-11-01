@@ -12,7 +12,7 @@ mock.method(getAuth(),'getUserByEmail',async()=>({uid:'ordinary',disabled:false}
 mock.method(getAuth(),'revokeRefreshTokens',async()=>{})
 mock.method(global,'fetch',async(url,options={})=>{
  url=String(url);if(url.includes('gmail.googleapis.com')){gmailCalls++;throw Error('No mail allowed')}
- assert.ok(url.includes('/b/yingyangcheck-admin-'),'Cross-project storage access')
+ assert.ok(url.includes('/b/yingyangcheck-admin-')||url.includes('/b/yingyangcheck-mail-state-'),'Cross-project storage access')
  const u=new URL(url),name=u.searchParams.get('name')||decodeURIComponent(u.pathname.split('/o/')[1]||'')
  if(options.method==='POST'){store.set(name,JSON.parse(typeof options.body==='string'?options.body:Buffer.from(options.body).toString()));return new Response('{}',{status:200})}
  if(u.searchParams.has('prefix'))return new Response(JSON.stringify({items:[]}),{status:200})
@@ -47,4 +47,18 @@ test('shared identity and report services reject cross-project contexts even whe
  await assert.rejects(identity.session({project:'yingyangtest',app:true,uid:'test'}),e=>e.code==='permission-denied')
  const archive=new ReportArchive({},Date.now,'yingyangcheck')
  await assert.rejects(archive.page({},{project:'yingyangtest',app:true,uid:'test',role:'master'},'synthetic'),e=>e.code==='permission-denied')
+})
+
+test('active production prepares a signed ticket only for anonymous consented valid submissions; no email sent',async()=>{
+ process.env.PRODUCTION_SEND_ENABLED='true'
+ process.env.YINGYANG_MAIL_CONFIG=JSON.stringify({enabled:true,projectId:'yingyangcheck',mode:'production',sender:'synthetic@gmail.com',recipient:'synthetic@naver.com',client_id:'231582543863-synthetic.apps.googleusercontent.com',client_secret:'synthetic',refresh_token:'synthetic'})
+ store.set('v1/control/mail',{enabled:true})
+ const {randomUUID}=require('node:crypto'),{productionPrivacyVersion,productionPdfConsentVersion}=require('../lib/src/production/contracts')
+ const uid='anonymous-active',receipt=await handlers.examStatus.run(wrap({action:'consent-privacy',version:productionPrivacyVersion,personal:true,sensitive:true},uid,'anonymous'))
+ assert.equal((await handlers.examStatus.run(wrap({},uid,'anonymous'))).sendEnabled,true)
+ const data={requestId:randomUUID(),version:1,name:'Virtual Patient',phone:'01000001234',acquired:Array(10).fill(1),innate:Array(40).fill(2),consent:{personal:true,sensitive:true,synthetic:false,version:productionPdfConsentVersion},scenario:'success',privacyProof:receipt.proof}
+ assert.ok((await handlers.prepareReport.run(wrap(data,uid,'anonymous'))).ticket)
+ await assert.rejects(handlers.prepareReport.run(wrap({...data,recipient:'injected@naver.com'},uid,'anonymous')),e=>e.code==='invalid-argument')
+ await assert.rejects(handlers.prepareReport.run(wrap(data)),e=>e.code==='permission-denied')
+ assert.equal(gmailCalls,0)
 })
