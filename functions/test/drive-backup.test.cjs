@@ -41,6 +41,13 @@ test('source expiry while waiting and tampered existing remote file never trigge
  const x=setup();x.fail='before';await x.make().run(x.id);x.exists=false;x.advance(60000);assert.equal((await x.make().run(x.id)).status,'source-expired');assert.equal(x.creates,1)
  const y=setup();y.fail='after';await y.make().run(y.id);[...y.uploads.values()][0].md5Checksum='bad';y.advance(60000);assert.equal((await y.make().run(y.id)).status,'failed');assert.equal(y.creates,1)
 })
+test('backup failure does not change completed mail receipt or invoke the sender again',async()=>{
+ const {createSubmissionService}=require('../lib/functions/src/service'),x=setup();let sent=0
+ const mail=createSubmissionService({send:async()=>sent++},Date.now,async()=>Buffer.from('%PDF-virtual'))
+ const input={requestId:randomUUID(),version:1,name:'가상테스터',phone:'01000001234',acquired:Array(10).fill(1),innate:Array(40).fill(2),consent:{personal:true,sensitive:true,synthetic:true,version:'staging-clinic-submission-4'},scenario:'success'}
+ const receipt=await mail(input,'virtual','virtual-key');x.fail='auth';assert.equal((await x.make().run(x.id)).status,'reauthorization-required')
+ assert.equal(receipt.status,'mock-completed');assert.equal((await mail(input,'virtual','virtual-key')).duplicate,true);assert.equal(sent,1)
+})
 test('Google adapter only POSTs OAuth/upload and GETs metadata, with fixed private owner and folder',async()=>{
  const requests=[];mock.method(global,'fetch',async(url,init={})=>{requests.push({url:String(url),method:init.method||'GET'});if(String(url).includes('oauth2'))return Response.json({access_token:'synthetic',scope:'https://www.googleapis.com/auth/drive.file'});if(String(url).includes('generateIds'))return Response.json({ids:['virtual-created-id']});if(String(url).includes('upload/'))return Response.json({id:'virtual-created-id'});return Response.json({name:'YingYang_검진결과_백업',mimeType:'application/vnd.google-apps.folder',shared:false,owners:[{emailAddress:'ukclinic.official@gmail.com'}],capabilities:{canAddChildren:true},permissions:[{type:'user',role:'owner',emailAddress:'ukclinic.official@gmail.com'}]})})
  try{const token=await driveAccess({projectId:'yingyangtest',ownerEmail:'ukclinic.official@gmail.com',client_id:'495270334718-virtual.apps.googleusercontent.com',client_secret:'synthetic',refresh_token:'synthetic'},'yingyangtest'),drive=new GoogleDriveUpload(token);await drive.checkFolder('virtual-private-folder');const id=await drive.generateId();await drive.create(id,'virtual-private-folder','261101_가상테스터_1234.pdf',Buffer.from('%PDF-test'));assert.ok(requests.every(r=>['GET','POST'].includes(r.method)));assert.ok(!requests.some(r=>r.url.includes('/permissions')))}finally{mock.restoreAll()}
