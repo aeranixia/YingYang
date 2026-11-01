@@ -1,5 +1,7 @@
 # 운영 이메일 전송 활성화
 
+최종 주소 정정: 운영 수신자는 **ukclinic.official@gmail.com**. 기존 발신자 **hoyunum1130@gmail.com**과 OAuth는 유지한다. 아래 uk.official 주소는 정정 전 이력이다. Drive 백업 계정도 ukclinic.official@gmail.com으로 확정했으나 Drive 인증·업로드는 아직 구현/실행하지 않았다.
+
 2026-11-01 후속 사용자 요청으로 운영 고정 수신자를 uk.official@gmail.com으로 변경했다. 발신 계정과 보안·횟수·보관 제한은 유지하고 실제 시험 메일은 보내지 않는다. Staging 수신자는 별도 설정으로 유지한다.
 
 2026-11-01 사용자 전송 활성화 지시 및 운영 Gmail 소유자의 OAuth 동의를 기준으로 진행한다. 과거 발송 중지 보고는 이 변경 전 상태다.

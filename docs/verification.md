@@ -1,5 +1,11 @@
 # YingYang v1 검증 기록
 
+## 운영 수신 주소 최종 정정 — 2026-11-01
+
+- 사용자 최종 지시: 발신 hoyunum1130@gmail.com 유지, 수신/Drive 백업 계정 ukclinic.official@gmail.com. uk.official 및 ukclinic@gmail.com 지정은 취소. 발신 OAuth 변경은 실행하지 않았다.
+- 기존 메일 Secret의 수신자만 정정하고 운영 Functions6개를 재배포했다. 각 함수의 바인딩된 Secret에서 새 수신자·기존 발신자·인증/활성 상태 유지 확인. / 및 /admin HTTP200·기존 Hosting 자산 일치 확인. Functions 빌드와 기존 서버/PDF62개 테스트 통과. 이번 시험 메일 발송 없음.
+- v1.3 최종 PDF 제목·공통 파일명·Drive 무기한 보관/삭제 기능·권한 금지 정책과 구현 전 기술 제약은 이슈 #8에서 관리한다. v1.3 코드/운영 배포·Drive API 활성화·OAuth·파일 전송은 하지 않았다.
+
 ## 운영 고정 수신자 변경 — 2026-11-01
 
 - 사용자 요청으로 운영 수신자를 lipsam@naver.com에서 uk.official@gmail.com으로 변경. 발신 Gmail·OAuth·활성화 상태·일일50회·중복 처리·PDF7일 유지. Staging 수신자는 변경하지 않음.
