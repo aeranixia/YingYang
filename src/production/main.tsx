@@ -11,6 +11,7 @@ import { privacyVersion, type PrivacyReceipt } from '../staging/privacy-storage'
 import type { Submission, MockReceipt } from '../staging/contracts'
 import config from './public-config'
 import { ProductionSubmission, type DeliveryReceipt } from './SubmissionForm'
+import { PolicyLinks } from './PolicyLinks'
 import '../style.css'
 import '../staging/staging.css'
 import '../staging/exam.css'
@@ -43,4 +44,4 @@ function Production(){
  if(!ready)return <main className="shell"><h1>YingYang</h1><p role="status">{error||'검사 세션을 준비하고 있습니다…'}</p>{error&&<button className="primary" onClick={()=>void start()}>다시 시도</button>}</main>
  return <><div className="staging-ribbon">YingYang v1.2.0 {enabled?'':'· 이메일 전송 중지'}</div><PrivacyGate production authorize={authorize} verify={verify} confirm={confirm} send={send} renderSubmission={props=>enabled?<ProductionSubmission {...props} send={sendProduction}/>:<ClosedSubmission/>}/></>
 }
-createRoot(document.getElementById('root')!).render(admin?<AdminPortal auth={auth} functions={functions} environmentLabel="v1.2.0"/>:<Production/>)
+createRoot(document.getElementById('root')!).render(<><PolicyLinks/>{admin?<AdminPortal auth={auth} functions={functions} environmentLabel="v1.2.0"/>:<Production/>}</>)
