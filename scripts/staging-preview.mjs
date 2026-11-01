@@ -6,3 +6,5 @@ copyFileSync('docs/previews/issue-6-pdf.png', 'dist-staging/previews/issue-6-pdf
 copyFileSync('docs/previews/issue-4-privacy-policy.png', 'dist-staging/previews/issue-4-privacy-policy.png')
 copyFileSync('docs/previews/issue-7-admin-desktop.png', 'dist-staging/previews/issue-7-admin-desktop.png')
 copyFileSync('docs/previews/issue-7-admin-mobile.png', 'dist-staging/previews/issue-7-admin-mobile.png')
+copyFileSync('docs/previews/issue-8-pdf.png', 'dist-staging/previews/issue-8-pdf.png')
+copyFileSync('docs/previews/issue-8-admin.png', 'dist-staging/previews/issue-8-admin.png')
