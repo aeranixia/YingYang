@@ -63,3 +63,8 @@ test('Staging backup callable rejects ordinary admin, missing App Check, stale m
  await assert.rejects(master.run({...request({action:'retry',id:randomUUID()}),auth:{uid:'virtual',token:{auth_time:1}}}),e=>e.code==='failed-precondition')
  process.env.GCLOUD_PROJECT='yingyangcheck';await assert.rejects(master.run(request({action:'status'})),e=>e.code==='permission-denied')
 })
+
+test('Google adapter rejects link-readable backup folders before any upload',async()=>{
+ const methods=[];mock.method(global,'fetch',async(_url,options={})=>{methods.push(options.method||'GET');return Response.json({name:'YingYang_검진결과_백업',mimeType:'application/vnd.google-apps.folder',shared:true,owners:[{emailAddress:'ukclinic.official@gmail.com'}],capabilities:{canAddChildren:true},permissions:[{type:'anyone',role:'reader'},{type:'user',role:'owner',emailAddress:'ukclinic.official@gmail.com'}]})})
+ try{await assert.rejects(new GoogleDriveUpload('synthetic-token').checkFolder('virtual-private-folder'),e=>e.code==='permission');assert.deepEqual(methods,['GET'])}finally{mock.restoreAll()}
+})
