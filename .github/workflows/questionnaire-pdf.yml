@@ -33,5 +33,17 @@ jobs:
           git add docs/questionnaire-review-v1.2.0.pdf
           if ! git diff --cached --quiet; then
             git commit -m "docs: publish downloadable questionnaire PDF"
-            git push
+            # The branch may have advanced while the PDF was building.
+            # Rebase the PDF-only commit onto the current main; never force-push.
+            for attempt in 1 2 3 4 5; do
+              git fetch origin main
+              git rebase origin/main
+              if git push origin HEAD:main; then
+                exit 0
+              fi
+              echo "main changed during PDF push; retry $attempt/5"
+              sleep 2
+            done
+            echo "Failed to publish PDF after 5 safe retries" >&2
+            exit 1
           fi

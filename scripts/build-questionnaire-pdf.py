@@ -15,13 +15,22 @@ root = Path(__file__).resolve().parents[1]
 source = root / "docs/questionnaire-review-v1.2.0.md"
 output = root / "docs/questionnaire-review-v1.2.0.pdf"
 font = next((p for p in [
-    Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
     Path("/usr/share/fonts/truetype/nanum/NanumGothic.ttf"),
+    Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
     Path("/usr/share/fonts/truetype/nanum/NanumBarunGothic.ttf"),
 ] if p.exists()), None)
 if font is None:
     raise SystemExit("Korean font missing; install fonts-nanum or fonts-noto-cjk")
 pdfmetrics.registerFont(TTFont("Korean", str(font), subfontIndex=0))
+bold_font = next((p for p in [
+    Path("/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf"),
+    Path("/usr/share/fonts/truetype/nanum/NanumBarunGothicBold.ttf"),
+    Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"),
+] if p.exists()), None)
+if bold_font is None:
+    raise SystemExit("Korean bold font missing; install fonts-nanum")
+pdfmetrics.registerFont(TTFont("Korean-Bold", str(bold_font), subfontIndex=0))
+pdfmetrics.registerFontFamily("Korean", normal="Korean", bold="Korean-Bold", italic="Korean", boldItalic="Korean-Bold")
 styles = {
  "title": ParagraphStyle("T",fontName="Korean",fontSize=19,leading=27,spaceAfter=14,textColor=colors.HexColor("#17335B")),
  "section": ParagraphStyle("S",fontName="Korean",fontSize=14,leading=21,spaceBefore=17,spaceAfter=9,textColor=colors.HexColor("#17335B")),
@@ -31,8 +40,8 @@ styles = {
 }
 def fmt(s):
     s=escape(s)
-    s=re.sub(r"\\*\\*(.*?)\\*\\*",r"<b>\\1</b>",s)
-    s=re.sub(r"`([^`]+)`",r"\\1",s)
+    s=re.sub(r"\*\*(.*?)\*\*", lambda m: "<b>"+m.group(1)+"</b>", s)
+    s=re.sub(r"`([^`]+)`", lambda m: m.group(1), s)
     return s
 story=[]
 for raw in source.read_text(encoding="utf-8").splitlines():
