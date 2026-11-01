@@ -1,3 +1,4 @@
+import { validReportName } from './report-name'
 import MailComposer from 'nodemailer/lib/mail-composer'
 import type { MailConfig } from './gmail-sender'
 import type { Attachment } from './sender'
@@ -34,7 +35,7 @@ export async function productionAccess(raw:MailConfig){
 }
 export async function composeProductionMail(raw:MailConfig,attachment:Attachment,operation:string){
  const c=validateProductionMail(raw)
- if(!/^[a-f0-9-]{36}$/.test(operation)||!/^[\p{L}\p{N} -]{1,30}_\d{4}\.pdf$/u.test(attachment.filename)||attachment.content.length>1048576||attachment.content.subarray(0,5).toString()!=='%PDF-')throw Error('Invalid attachment')
+ if(!/^[a-f0-9-]{36}$/.test(operation)||!validReportName(attachment.filename)||attachment.content.length>1048576||attachment.content.subarray(0,5).toString()!=='%PDF-')throw Error('Invalid attachment')
  return new MailComposer({from:c.sender,to:c.recipient,subject:'YingYang 검사 결과',text:'검사 결과 PDF를 첨부합니다. 업무 담당자만 확인해 주세요.',messageId:'<'+operation+'@yingyangcheck.web.app>',attachments:[{filename:attachment.filename,content:attachment.content,contentType:'application/pdf'}],disableFileAccess:true,disableUrlAccess:true}).compile().build()
 }
 export async function productionDispatch(c:MailConfig,attachment:Attachment,operation:string,token:string){

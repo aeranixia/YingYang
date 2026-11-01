@@ -23,8 +23,8 @@ test('server recalculates exact counts and original classification totals', () =
 })
 
 test('safe attachment name includes only name and phone last four', () => {
- assert.equal(attachmentName(input()),'가상테스터_1234.pdf')
- assert.equal(attachmentName({name:'../가상\n테스터',phone:'01000005678'}),'가상테스터_5678.pdf')
+ assert.equal(attachmentName(input(),new Date('2026-11-01T00:00:00Z')),'261101_가상테스터_1234.pdf')
+ assert.equal(attachmentName({name:'../가상\n테스터',phone:'01000005678'},new Date('2026-11-01T00:00:00Z')),'261101_가상테스터_5678.pdf')
  assert.throws(()=>attachmentName({name:'../',phone:'1234'}),InputError)
 })
 
@@ -45,7 +45,7 @@ test('mock sender receives PDF and safe filename; buffer discarded, receipt cont
  let buffer, filename
  const service=createSubmissionService({send:async a=>{buffer=a.content;filename=a.filename;assert.ok(a.content.length>1000)}})
  const data=input(),result=await service(data,'tester',key)
- assert.equal(filename,'가상테스터_1234.pdf');assert.ok(buffer.every(x=>x===0))
+ assert.match(filename,/^\d{6}_가상테스터_1234\.pdf$/);assert.ok(buffer.every(x=>x===0))
  assert.deepEqual(result,{status:'mock-completed',requestId:data.requestId,duplicate:false})
 })
 

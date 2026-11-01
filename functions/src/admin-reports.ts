@@ -2,13 +2,14 @@ import { createHmac, randomUUID } from 'node:crypto'
 import { runtimeToken } from './mail-state'
 import type { Submission } from '../../src/staging/contracts'
 import type { AdminPage, AdminQuery, AdminReport } from '../../src/staging/admin-contracts'
+import { reportName, validReportName } from './report-name'
 
 export const archiveDays = 7 * 86400000
 export const adminBucket = 'yingyangtest-admin-reports-495270334718'
-export type ArchiveValue = { bytes: Buffer; generation: string }
+export type ArchiveValue = { bytes: Buffer; generation: string; filename?:string }
 export interface ArchiveStore {
  read(name: string): Promise<ArchiveValue | null>
- write(name: string, bytes: Buffer, contentType: string, generation: string): Promise<void>
+ write(name: string, bytes: Buffer, contentType: string, generation: string, filename?:string): Promise<void>
  remove(name: string): Promise<void>
  list(prefix: string, cursor?: string): Promise<{ names: string[]; nextCursor?: string }>
 }
@@ -41,7 +42,7 @@ function queryInput(raw: unknown): AdminQuery {
  return q
 }
 export interface DeliveryArchive {
- capture(input: Submission, pdf: Buffer, id: string, mode: 'mock' | 'gmail'): Promise<void>
+ capture(input: Submission, pdf: Buffer, id: string, mode: 'mock' | 'gmail', filename?:string): Promise<void>
  update(id: string, status: AdminReport['status'], errorCode?: string): Promise<void>
 }
 export class ReportArchive implements DeliveryArchive {
@@ -54,7 +55,7 @@ export class ReportArchive implements DeliveryArchive {
   catch { throw new AdminError('unavailable') }
   finally { value.bytes.fill(0) }
  }
- async capture(input: Submission, pdf: Buffer, id: string, mode: 'mock' | 'gmail') {
+ async capture(input: Submission, pdf: Buffer, id: string, mode: 'mock' | 'gmail', filename?:string) {
   if (!idPattern.test(id) || pdf.length > 1048576 || pdf.subarray(0,5).toString() !== '%PDF-') throw new AdminError('invalid-argument')
   const now = this.clock()
   let prior = await this.report(id)
@@ -64,7 +65,9 @@ export class ReportArchive implements DeliveryArchive {
    prior = await this.report(id)
   }
   if (!prior || this.clock() >= prior.report.expiresAt) throw new AdminError('failed-precondition')
-  try { await this.store.write('pdf/'+id+'.pdf',pdf,'application/pdf','0') } catch (error) { if (!(error instanceof ArchiveConflict)) throw error }
+  const downloadName=filename||reportName(input.name,input.phone.slice(-4),new Date(prior.report.createdAt))
+  if(!validReportName(downloadName))throw new AdminError('invalid-argument')
+  try { await this.store.write('pdf/'+id+'.pdf',pdf,'application/pdf','0',downloadName) } catch (error) { if (!(error instanceof ArchiveConflict)) throw error }
   await this.modify(id, r => ({...r,pdfAvailable:true,status:'pending',errorCode:''}))
  }
  private async modify(id: string, change: (r: AdminReport) => AdminReport) {
@@ -113,8 +116,8 @@ export class ReportArchive implements DeliveryArchive {
    if(file.bytes.length>1048576||file.bytes.subarray(0,5).toString()!=='%PDF-')throw new AdminError('unavailable')
    await this.audit(context,key,'download','allowed',id)
    if (this.clock() >= item.report.expiresAt) { await this.store.remove('pdf/'+id+'.pdf'); throw new AdminError('failed-precondition') }
-   const name=item.report.maskedName.replaceAll('*','＊').replace(/[^\p{L}\p{N}＊ -]/gu,'') || '＊'
-   return {base64:file.bytes.toString('base64'),filename:name+'('+item.report.phoneLast4+').pdf'}
+   const legacy=item.report.maskedName.replaceAll('*','').trim()||'검사결과'
+   return {base64:file.bytes.toString('base64'),filename:validReportName(file.filename)?file.filename:reportName(legacy,item.report.phoneLast4,new Date(item.report.createdAt))}
   } finally { file.bytes.fill(0) }
  }
 }
@@ -125,11 +128,15 @@ export class GcsArchiveStore implements ArchiveStore {
  async read(name: string) {
   const r = await this.request(this.object(name)+'?alt=media'); if(r.status===404)return null; if(!r.ok)throw Error('Archive read failed')
   const generation = r.headers.get('x-goog-generation'); if(!generation)throw Error('Archive version missing')
-  return {bytes:Buffer.from(await r.arrayBuffer()),generation}
+  const bytes=Buffer.from(await r.arrayBuffer())
+  try{let filename: string|undefined;if(name.startsWith('pdf/')){const meta=await this.request(this.object(name)+'?fields=metadata,generation');if(!meta.ok)throw Error('Metadata unavailable');const m=await meta.json() as {generation:string;metadata?:{filename?:string}};if(m.generation!==generation)throw Error('Object changed');filename=m.metadata?.filename}return {bytes,generation,filename}}catch(e){bytes.fill(0);throw e}
  }
- async write(name: string, bytes: Buffer, contentType: string, generation: string) {
+ async write(name: string, bytes: Buffer, contentType: string, generation: string, filename?:string) {
   this.object(name)
-  const r = await this.request('https://storage.googleapis.com/upload/storage/v1/b/'+this.bucket+'/o?uploadType=media&name='+encodeURIComponent(name)+'&ifGenerationMatch='+generation,{method:'POST',headers:{'content-type':contentType},body:new Uint8Array(bytes)})
+  if(filename&&!validReportName(filename))throw Error('Invalid filename')
+  const boundary='yy-'+randomUUID(),body=filename?Buffer.concat([Buffer.from('--'+boundary+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify({name,metadata:{filename}})+'\r\n--'+boundary+'\r\nContent-Type: '+contentType+'\r\n\r\n'),bytes,Buffer.from('\r\n--'+boundary+'--')]):undefined
+  let r:Response
+  try{r=await this.request('https://storage.googleapis.com/upload/storage/v1/b/'+this.bucket+'/o?uploadType='+(filename?'multipart':'media')+'&name='+encodeURIComponent(name)+'&ifGenerationMatch='+generation,{method:'POST',headers:{'content-type':filename?'multipart/related; boundary='+boundary:contentType},body:new Uint8Array(body||bytes)})}finally{body?.fill(0)}
   if(r.status===412)throw new ArchiveConflict();if(!r.ok)throw Error('Archive write failed')
  }
  async remove(name: string) { const r=await this.request(this.object(name),{method:'DELETE'});if(!r.ok&&r.status!==404)throw Error('Archive delete failed') }

@@ -15,8 +15,8 @@ export const DAILY_MAIL_ATTEMPT_LIMIT = 50
 const digest = (value: string, key: string) => createHmac('sha256', key).update(value).digest('hex')
 export const canonicalSubmission = (input: Submission) => JSON.stringify([input.requestId,input.version,input.name,input.phone,input.acquired,input.innate,[input.consent.personal,input.consent.sensitive,input.consent.synthetic,input.consent.version],input.scenario,input.completionProof ?? null,input.privacyProof ?? null])
 export type MailProtocol={validate?:(raw:unknown)=>Submission;operation?:(input:Submission,uid:string,key:string)=>string;canonical?:(input:Submission)=>string}
-type Ticket = { operation: string; requestId: string; scope: string; expires: number }
-type RecordState = { digest: string; state: 'preparing' | 'failed' | 'sending' | 'sent' | 'unknown'; attempts: number; leaseUntil: number; expires: number }
+type Ticket = { operation: string; requestId: string; scope: string; expires: number; createdAt?:number }
+type RecordState = { digest: string; state: 'preparing' | 'failed' | 'sending' | 'sent' | 'unknown'; attempts: number; leaseUntil: number; expires: number; createdAt?:number }
 function scope(input: Submission, uid: string, config: MailConfig, key: string,protocol:MailProtocol) { return digest(JSON.stringify([(protocol.canonical||canonicalSubmission)(input),uid,config.sender,config.recipient]), key) }
 export function prepareMailTicket(raw: unknown, uid: string, config: MailConfig, key: string, now = Date.now(),protocol:MailProtocol={}) {
  const input = (protocol.validate||((value:unknown)=>validateSubmission(value,'staging-e-draft-1')))(raw)
@@ -62,19 +62,19 @@ export function createLiveService(store: StateStore, dispatch: (config: MailConf
   if (prior && ['sending','unknown'].includes(prior.value.state)) throw new LiveError('failed-precondition',true)
   if (prior?.value.state === 'preparing' && prior.value.leaseUntil > now) throw new LiveError('aborted')
   if ((prior?.value.attempts || 0) >= 3) throw new LiveError('resource-exhausted')
-  let record: RecordState = { digest:ticket.scope,state:'preparing',attempts:(prior?.value.attempts||0)+1,leaseUntil:now+45000,expires:now+86400000 }
+  let record: RecordState = { digest:ticket.scope,state:'preparing',attempts:(prior?.value.attempts||0)+1,leaseUntil:now+45000,expires:now+86400000,createdAt:prior?.value.createdAt||now }
   let generation: string
   try { generation=await store.write(name,record,prior?.generation||'0') } catch(error) { if(error instanceof Conflict) throw new LiveError('aborted'); throw new LiveError('unavailable') }
   let buffer: Buffer | undefined, sending=false
   try {
    buffer = await pdf(input,completedAt)
-   await archive?.capture(input,buffer,ticket.operation,'gmail')
+   await archive?.capture(input,buffer,ticket.operation,'gmail',attachmentName(input,completedAt||new Date(record.createdAt!)))
    const accessToken = await authorize(config)
    await quota(clock())
    record={...record,state:'sending'}
    generation=await store.write(name,record,generation)
    sending=true
-   await dispatch(config,{filename:attachmentName(input),content:buffer},ticket.operation,accessToken)
+   await dispatch(config,{filename:attachmentName(input,completedAt||new Date(record.createdAt!)),content:buffer},ticket.operation,accessToken)
    await store.write(name,{...record,state:'sent'},generation)
    try { await archive?.update(ticket.operation,'success') } catch {}
    return {status:'gmail-accepted' as const,requestId:input.requestId,duplicate:false}
