@@ -3,6 +3,9 @@ import { runtimeToken } from './mail-state'
 import type { Submission } from '../../src/staging/contracts'
 import type { AdminPage, AdminQuery, AdminReport } from '../../src/staging/admin-contracts'
 import { reportName, validReportName } from './report-name'
+import { calculate } from './submission'
+import { bookForVersion, bookQuestions } from '../../src/questionnaires'
+import type { AdminDetail } from '../../src/staging/admin-contracts'
 
 export const archiveDays = 7 * 86400000
 export const adminBucket = 'yingyangtest-admin-reports-495270334718'
@@ -32,7 +35,7 @@ export function mockOperation(uid: string, requestId: string, key: string) {
 }
 function validReport(value: unknown): value is AdminReport {
  const r = value as AdminReport
- return !!r && idPattern.test(r.id) && typeof r.maskedName === 'string' && r.maskedName.includes('*') && r.maskedName.length <= 60 && /^\d{4}$/.test(r.phoneLast4) && Number.isSafeInteger(r.createdAt) && Number.isSafeInteger(r.updatedAt) && r.updatedAt >= r.createdAt && Number.isSafeInteger(r.expiresAt) && r.expiresAt === r.createdAt + archiveDays && ['pending','success','failed'].includes(r.status) && ['mock','gmail'].includes(r.mode) && errors.has(r.errorCode) && typeof r.pdfAvailable === 'boolean'
+ return !!r && (r.questionnaire === undefined || ['legacy-50','sasang-80'].includes(r.questionnaire)) && idPattern.test(r.id) && typeof r.maskedName === 'string' && r.maskedName.includes('*') && r.maskedName.length <= 60 && /^\d{4}$/.test(r.phoneLast4) && Number.isSafeInteger(r.createdAt) && Number.isSafeInteger(r.updatedAt) && r.updatedAt >= r.createdAt && Number.isSafeInteger(r.expiresAt) && r.expiresAt === r.createdAt + archiveDays && ['pending','success','failed'].includes(r.status) && ['mock','gmail'].includes(r.mode) && errors.has(r.errorCode) && typeof r.pdfAvailable === 'boolean'
 }
 function queryInput(raw: unknown): AdminQuery {
  if (!raw || typeof raw !== 'object' || Array.isArray(raw) || Object.keys(raw).some(k => !['from','to','status','cursor'].includes(k))) throw new AdminError('invalid-argument')
@@ -60,11 +63,14 @@ export class ReportArchive implements DeliveryArchive {
   const now = this.clock()
   let prior = await this.report(id)
   if (!prior) {
-   const record: AdminReport = {id,maskedName:maskedName(input.name),phoneLast4:input.phone.slice(-4),createdAt:now,updatedAt:now,expiresAt:now+archiveDays,status:'pending',mode,errorCode:'',pdfAvailable:false}
+   const record: AdminReport = {id,maskedName:maskedName(input.name),phoneLast4:input.phone.slice(-4),createdAt:now,updatedAt:now,expiresAt:now+archiveDays,status:'pending',mode,errorCode:'',pdfAvailable:false,questionnaire:bookForVersion(input.version)}
    try { await this.store.write('logs/'+id+'.json',Buffer.from(JSON.stringify(record)),'application/json','0') } catch (error) { if (!(error instanceof ArchiveConflict)) throw error }
    prior = await this.report(id)
   }
   if (!prior || this.clock() >= prior.report.expiresAt) throw new AdminError('failed-precondition')
+  const details: AdminDetail = { questionnaire: bookForVersion(input.version), acquired: input.acquired, innate: input.innate, scores: calculate(input) }
+  const detailBytes=Buffer.from(JSON.stringify(details))
+  try { await this.store.write('details/'+id+'.json',detailBytes,'application/json','0') } catch (error) { if (!(error instanceof ArchiveConflict)) throw error } finally { detailBytes.fill(0) }
   const downloadName=filename||reportName(input.name,input.phone.slice(-4),new Date(prior.report.createdAt))
   if(!validReportName(downloadName))throw new AdminError('invalid-argument')
   try { await this.store.write('pdf/'+id+'.pdf',pdf,'application/pdf','0',downloadName) } catch (error) { if (!(error instanceof ArchiveConflict)) throw error }
@@ -86,6 +92,24 @@ export class ReportArchive implements DeliveryArchive {
  private async audit(context: AdminContext, key: string, action: string, outcome: string, reportId?: string) {
   const record = { at:this.clock(), actor:createHmac('sha256',key).update('admin-access:'+context.uid).digest('hex'),action,outcome,...(reportId?{reportId}:{}) }
   await this.store.write('access/'+randomUUID()+'.json',Buffer.from(JSON.stringify(record)),'application/json','0')
+ }
+ async detail(raw: unknown, context: AdminContext, key: string): Promise<AdminDetail> {
+  requireAdmin(context, this.project)
+  const data = raw as { action: string; id: string }
+  if (!data || Object.keys(data).sort().join(',') !== 'action,id' || data.action !== 'detail' || !idPattern.test(data.id)) throw new AdminError('invalid-argument')
+  const record = await this.report(data.id)
+  if (!record || this.clock() >= record.report.expiresAt) throw new AdminError('not-found')
+  const stored = await this.store.read('details/'+data.id+'.json')
+  if (!stored) throw new AdminError('not-found')
+  try {
+   const d = JSON.parse(stored.bytes.toString()) as AdminDetail
+   if (!['sasang-80', 'legacy-50'].includes(d.questionnaire) || d.questionnaire !== record.report.questionnaire) throw Error()
+   const items = bookQuestions(d.questionnaire)
+   for (const kind of ['acquired', 'innate'] as const) if (!Array.isArray(d[kind]) || d[kind].length !== items[kind].length || Array.from(d[kind]).some((v, i) => !items[kind][i].options.some(o => o.value === v))) throw Error()
+   await this.audit(context,key,'detail','allowed',data.id)
+   if(this.clock()>=record.report.expiresAt)throw Error()
+   return { questionnaire:d.questionnaire, acquired:d.acquired, innate:d.innate, scores: calculate({ version: d.questionnaire === 'sasang-80' ? 2 : 1, acquired: d.acquired, innate: d.innate } as Submission) }
+  } catch { throw new AdminError('unavailable') } finally { stored.bytes.fill(0) }
  }
  async page(raw: unknown, context: AdminContext, key: string): Promise<AdminPage> {
   requireAdmin(context,this.project); const query = queryInput(raw), now = this.clock()
@@ -124,7 +148,7 @@ export class ReportArchive implements DeliveryArchive {
 export class GcsArchiveStore implements ArchiveStore {
  constructor(private bucket = adminBucket, private token = runtimeToken, project='yingyangtest') { if (bucket!==(project==='yingyangcheck'?'yingyangcheck-admin-reports-231582543863':adminBucket)) throw Error('Staging archive only') }
  private async request(url: string, options: RequestInit = {}) { return fetch(url,{...options,headers:{authorization:'Bearer '+await this.token(),...options.headers},signal:AbortSignal.timeout(8000)}) }
- private object(name: string) { if (!/^(logs\/[a-f0-9-]+\.json|pdf\/[a-f0-9-]+\.pdf|access\/[a-f0-9-]+\.json)$/.test(name)) throw Error('Invalid archive path'); return 'https://storage.googleapis.com/storage/v1/b/'+this.bucket+'/o/'+encodeURIComponent(name) }
+ private object(name: string) { if (!/^((?:logs|details)\/[a-f0-9-]+\.json|pdf\/[a-f0-9-]+\.pdf|access\/[a-f0-9-]+\.json)$/.test(name)) throw Error('Invalid archive path'); return 'https://storage.googleapis.com/storage/v1/b/'+this.bucket+'/o/'+encodeURIComponent(name) }
  async read(name: string) {
   const r = await this.request(this.object(name)+'?alt=media'); if(r.status===404)return null; if(!r.ok)throw Error('Archive read failed')
   const generation = r.headers.get('x-goog-generation'); if(!generation)throw Error('Archive version missing')

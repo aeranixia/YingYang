@@ -2,6 +2,7 @@ import PDFDocument from 'pdfkit'
 import { join } from 'node:path'
 import { calculate } from './submission'
 import type { Submission } from '../../src/staging/contracts'
+import { createSasangPdf } from './sasang-pdf'
 
 export function formatCompletion(date: Date | null): string {
  if (!date) return '기록 없음 (이전 완료 데이터)'
@@ -10,6 +11,7 @@ export function formatCompletion(date: Date | null): string {
  return `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')}`
 }
 export async function createPdf(input: Submission, completedAt: Date | null, mode: 'mock' | 'gmail-test' | 'production' = 'mock'): Promise<Buffer> {
+ if (input.version === 2) return createSasangPdf(input, formatCompletion(completedAt), mode === 'production')
  const scores = calculate(input)
  const doc = new PDFDocument({ size: 'A4', margin: 40, font: join(__dirname, '../../../assets/NanumGothic-Regular.ttf'), info: { Title: '체질검사 결과', Author: 'YingYang' } })
  doc.registerFont('korean', join(__dirname, '../../../assets/NanumGothic-Regular.ttf'))

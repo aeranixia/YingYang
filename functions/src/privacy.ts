@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
-export const privacyVersion = 'staging-clinic-privacy-5'
+export const privacyVersion = 'staging-clinic-privacy-6'
 const duration = 7 * 86400000
 const hmac = (text: string, key: string) => createHmac('sha256', key).update('privacy:' + text).digest('hex')
 export function issuePrivacy(raw: unknown, uid: string, key: string, now = Date.now(), version = privacyVersion) {

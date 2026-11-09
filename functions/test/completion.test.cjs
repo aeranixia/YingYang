@@ -5,7 +5,7 @@ const {createSubmissionService}=require('../lib/functions/src/service')
 const {issuePrivacy}=require('../lib/functions/src/privacy')
 const key='synthetic-signing-key-for-completion-tests',at=Date.parse('2026-10-26T15:07:00Z')
 const answers=()=>({acquired:[1,2,3,4,1,2,3,4,1,2],innate:Array(40).fill(2)})
-const confirm=(data=answers())=>confirmCompletion({...data,action:'confirm-completion',nonce:randomUUID(),privacyProof:issuePrivacy({action:'consent-privacy',personal:true,sensitive:true,version:'staging-clinic-privacy-5'},'tester',key,at).proof,expires:at+7*86400000},'tester',key,at).proof
+const confirm=(data=answers())=>confirmCompletion({...data,action:'confirm-completion',nonce:randomUUID(),privacyProof:issuePrivacy({action:'consent-privacy',personal:true,sensitive:true,version:'staging-clinic-privacy-6'},'tester',key,at).proof,expires:at+7*86400000},'tester',key,at).proof
 
 test('KST completion proof uses server time across midnight, not generation or resend time',async()=>{
  const input={...answers(),completionProof:confirm()}

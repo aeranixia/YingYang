@@ -11,7 +11,7 @@ it('공개 문안은 정식 상호·담당부서·연락처를 제공하고 내�
  expect(text).toContain('대표원장')
  expect(text).toContain('접수실(프론트)')
  expect(text).toContain('1800-7544 / 1800-6544')
- expect(text).toContain('시행일: 2026-11-01 (Staging)')
+ expect(text).toContain('시행일: 2026-11-09 (Staging)')
  expect(text).not.toMatch(/초안|\[확인 필요\]|미확정|02-1800|위탁 없음|국외 이전 없음/)
  expect(text).toContain('기술적인 예약자 인증을 의미하지 않습니다')
  expect(text).toContain('Google/Firebase')

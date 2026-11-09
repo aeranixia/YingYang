@@ -11,7 +11,7 @@ import { productionPdfConsentVersion } from '../../src/production/contracts'
 export type ProductionMailConfig=MailConfig&{enabled:boolean;refresh_token:string;refreshTokenExpiresAt?:string}
 export const productionProtocol:MailProtocol={
  validate:raw=>validateSubmission(raw,productionPdfConsentVersion,false),
- operation:(input,uid,key)=>mockOperation(uid,'production:'+JSON.stringify([input.completionProof||null,input.acquired,input.innate]),key),
+ operation:(input,uid,key)=>mockOperation(uid,'production:'+JSON.stringify([...(input.version===2?['sasang-80']:[]),input.completionProof||null,input.acquired,input.innate]),key),
  canonical:input=>canonicalSubmission({...input,requestId:'',privacyProof:undefined}),
 }
 export function validateProductionMail(raw:unknown,now=Date.now()):ProductionMailConfig{

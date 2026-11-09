@@ -10,6 +10,18 @@ const callbacks=()=>({authorize:vi.fn(async()=>receipt()),verify:vi.fn(async()=>
 beforeEach(()=>{localStorage.clear();vi.spyOn(window,'scrollTo').mockImplementation(()=>{})})
 afterEach(()=>{cleanup();vi.restoreAllMocks()})
 function agree(){for(const box of screen.getAllByRole('checkbox'))fireEvent.click(box)}
+it('new-only hides book labels; enabling legacy reveals tabs and preserves both independent answers',async()=>{
+ seedPrivacy()
+ const props=callbacks(),view=render(<PrivacyGate {...props} books={{currentEnabled:true,legacyEnabled:false,revision:''}}/>)
+ await screen.findByRole('heading',{name:'선천적 사상체질'})
+ expect(screen.queryByRole('button',{name:'현재문항'})).toBeNull();expect(screen.queryByRole('button',{name:'문항 1.0'})).toBeNull()
+ view.rerender(<PrivacyGate {...props} books={{currentEnabled:true,legacyEnabled:true,revision:'1'}}/>)
+ fireEvent.click(screen.getAllByRole('button',{name:/시작하기/})[0]);fireEvent.click(screen.getByRole('radio',{name:/O · 그렇습니다/}))
+ const saved=localStorage.getItem(key('innate','sasang-80'))
+ fireEvent.click(screen.getByRole('button',{name:'문항 1.0'}));await screen.findByRole('heading',{name:'후천적 체질'})
+ fireEvent.click(screen.getByRole('button',{name:'현재문항'}));await screen.findByRole('heading',{name:'선천적 사상체질'})
+ expect(localStorage.getItem(key('innate','sasang-80'))).toBe(saved)
+})
 it('시작 전 글자 크기를 저장·복원하고 동의 선택과 기존 답변을 유지한다',async()=>{
  const saved=JSON.stringify({...fresh('acquired'),answers:[2,...Array(9).fill(null)]});localStorage.setItem(key('acquired'),saved)
  const props=callbacks(),view=render(<PrivacyGate {...props}/>);await screen.findByRole('heading',{name:'검사 시작 전 안내와 동의'})

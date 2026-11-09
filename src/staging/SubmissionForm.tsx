@@ -28,7 +28,7 @@ export function SubmissionForm({ states, send, confirm, guard }: { states: { acq
    if (confirm) await confirmPending(states, confirm)
    const privacyProof = guard?.()
    const proof = completionProof(states)
-   const data = { ...(privacyProof ? { privacyProof } : {}), ...(proof ? { completionProof: proof } : {}), version: states.acquired.version, name: name.trim(), phone: phone.replaceAll('-', ''), acquired: states.acquired.answers as number[], innate: states.innate.answers as number[], consent: { personal, sensitive, synthetic, version: consentVersion }, scenario }
+   const data = { ...(privacyProof ? { privacyProof } : {}), ...(proof ? { completionProof: proof } : {}), version: states.acquired.version, ...(states.acquired.version === 2 ? { questionnaire: 'sasang-80' as const } : {}), name: name.trim(), phone: phone.replaceAll('-', ''), acquired: states.acquired.answers as number[], innate: states.innate.answers as number[], consent: { personal, sensitive, synthetic, version: consentVersion }, scenario }
    const signature = JSON.stringify(data)
    if (request.current.signature !== signature) request.current = { id: crypto.randomUUID(), signature }
    const result = await send({ ...data, requestId: request.current.id })

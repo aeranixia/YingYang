@@ -4,6 +4,16 @@ import { seedPrivacy } from './test-privacy'
 import { acceptPrivacy, assertStates, deleteAll, ensureEpoch, epoch, expire, hasLegacy, metadataKey, privacy, privacyKey, proofKey, retentionMs, sessionStore } from './privacy-storage'
 beforeEach(()=>{localStorage.clear();vi.useFakeTimers();vi.setSystemTime(new Date('2026-10-31T00:00:00Z'))})
 afterEach(()=>vi.useRealTimers())
+it('new and legacy books keep independent storage, expiry metadata and deletion without overwriting old answers',()=>{
+ const legacy=seedPrivacy();legacy.save({...fresh('acquired'),answers:Array(10).fill(3),completed:true})
+ const raw=localStorage.getItem(key('acquired')),newStore=sessionStore(epoch(),'sasang-80')
+ newStore.read('innate');newStore.save({...fresh('innate','sasang-80'),answers:[1,...Array(39).fill(null)]})
+ expect(localStorage.getItem(key('acquired'))).toBe(raw)
+ expect(newStore.read('innate').answers[0]).toBe(1)
+ expect(()=>newStore.save(fresh('innate'))).toThrow()
+ expect(JSON.parse(localStorage.getItem(metadataKey)!).exams['sasang-80:innate']).toBeTruthy()
+ deleteAll();expect(localStorage.getItem(key('acquired'))).toBeNull();expect(localStorage.getItem(key('innate','sasang-80'))).toBeNull()
+})
 it('small server clock lead accepts receipt without extending expiry; large lead is rejected',()=>{
  const current=ensureEpoch(),at=Date.now()+1000,expires=at+retentionMs
  acceptPrivacy({proof:'server-clock',at,expires},current,false)

@@ -8,3 +8,4 @@ copyFileSync('docs/previews/issue-7-admin-desktop.png', 'dist-staging/previews/i
 copyFileSync('docs/previews/issue-7-admin-mobile.png', 'dist-staging/previews/issue-7-admin-mobile.png')
 copyFileSync('docs/previews/issue-8-pdf.png', 'dist-staging/previews/issue-8-pdf.png')
 copyFileSync('docs/previews/issue-8-admin.png', 'dist-staging/previews/issue-8-admin.png')
+for (const name of ['issue-9-pdf.png', 'issue-9-admin.png', 'issue-9-mobile.png']) copyFileSync('docs/previews/'+name, 'dist-staging/previews/'+name)

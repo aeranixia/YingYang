@@ -3,17 +3,20 @@ import { fresh, isComplete } from '../../src/engine'
 import type { Submission } from '../../src/staging/contracts'
 import { InputError } from './submission'
 import { verifyPrivacy, privacyVersion } from './privacy'
+import { type Book } from '../../src/questionnaires'
 
 const sign = (text: string, key: string) => createHmac('sha256', key).update(text).digest('hex')
-type Answers = Pick<Submission, 'acquired' | 'innate'>
-const scope = (data: Answers, uid: string, key: string) => sign(JSON.stringify([uid, data.acquired, data.innate]), key)
+type Answers = Pick<Submission, 'acquired' | 'innate' | 'questionnaire'>
+const scope = (data: Answers, uid: string, key: string) => sign(JSON.stringify([uid, data.acquired, data.innate, ...(data.questionnaire === 'sasang-80' ? ['sasang-80'] : [])]), key)
 export function confirmCompletion(raw: unknown, uid: string, key: string, now = Date.now(), expectedPrivacyVersion = privacyVersion) {
  const data = raw as Answers & { action: string; nonce: string; privacyProof: string; expires: number }
- if (!data || Object.keys(data).sort().join(',') !== 'acquired,action,expires,innate,nonce,privacyProof' || data.action !== 'confirm-completion' || typeof data.nonce !== 'string' || !/^[a-f0-9-]{36}$/.test(data.nonce)) throw new InputError('Invalid completion')
+ const fields = data?.questionnaire === undefined ? 'acquired,action,expires,innate,nonce,privacyProof' : 'acquired,action,expires,innate,nonce,privacyProof,questionnaire'
+ if (!data || Object.keys(data).sort().join(',') !== fields || data.questionnaire !== undefined && !['sasang-80', 'legacy-50'].includes(data.questionnaire) || data.action !== 'confirm-completion' || typeof data.nonce !== 'string' || !/^[a-f0-9-]{36}$/.test(data.nonce)) throw new InputError('Invalid completion')
+ const book: Book = data.questionnaire || 'legacy-50'
  const consent = verifyPrivacy(data.privacyProof, uid, key, now, expectedPrivacyVersion)
  if (!Number.isSafeInteger(data.expires) || data.expires <= now || data.expires > consent.expires) throw new InputError('Expired retention')
  for (const kind of ['acquired', 'innate'] as const) {
-  if (!Array.isArray(data[kind]) || Array.from(data[kind]).some(value => !Number.isInteger(value)) || !isComplete({ ...fresh(kind), answers: data[kind] })) throw new InputError('Incomplete answers')
+  if (!Array.isArray(data[kind]) || Array.from(data[kind]).some(value => !Number.isInteger(value)) || !isComplete({ ...fresh(kind, book), answers: data[kind] })) throw new InputError('Incomplete answers')
  }
  const encoded = Buffer.from(JSON.stringify({ at: now, expires: data.expires, nonce: data.nonce, scope: scope(data, uid, key) })).toString('base64url')
  return { proof: encoded + '.' + sign(encoded, key) }

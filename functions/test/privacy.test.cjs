@@ -1,4 +1,4 @@
-const {test}=require('node:test'),assert=require('node:assert/strict'),{randomUUID}=require('node:crypto')
+const {test,mock}=require('node:test'),assert=require('node:assert/strict'),{randomUUID}=require('node:crypto')
 const {issuePrivacy,verifyPrivacy,privacyVersion}=require('../lib/functions/src/privacy')
 const {confirmCompletion,completionDate}=require('../lib/functions/src/completion')
 const key='synthetic-privacy-test-key-32-characters',uid='synthetic-tester',at=Date.parse('2026-10-31T01:00:00Z'),week=7*86400000
@@ -19,6 +19,7 @@ test('completion requires prior consent and linked expiry; server rejects expire
  assert.throws(()=>completionDate({...answers(),completionProof:proof},uid,key,at+3600000))
 })
 test('deployed callable handlers reject missing consent before completion/mock and allow consent then mock without mail',async()=>{
+ const {GcsStateStore}=require('../lib/functions/src/mail-state');mock.method(GcsStateStore.prototype,'read',async path=>{assert.equal(path,'questionnaires/settings');return {value:{currentEnabled:true,legacyEnabled:true,revision:'virtual'},generation:'1'}})
  process.env.GCLOUD_PROJECT='yingyangtest';process.env.STAGING_ENV='stage-bc';process.env.MAIL_MODE='mock';process.env.SEND_ENABLED='false';process.env.STAGING_REQUEST_SIGNING_KEY=key
  const {stagingStatus,submitMockReport}=require('../lib/functions/src/index')
  const wrap=data=>({data,auth:{uid,token:{stagingTester:true}},app:{appId:'synthetic'},rawRequest:{rawBody:Buffer.alloc(0)}})

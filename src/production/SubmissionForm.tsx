@@ -19,7 +19,7 @@ export function ProductionSubmission({states,send,confirm,guard}:{states:{acquir
   try{
    guard?.();if(confirm)await confirmPending(states,confirm)
    const privacyProof=guard?.(),proof=completionProof(states)
-   const data={version:states.acquired.version,name:name.trim().normalize('NFC'),phone:phone.replaceAll('-',''),acquired:states.acquired.answers as number[],innate:states.innate.answers as number[],consent:{personal,sensitive,synthetic:false,version:productionPdfConsentVersion},scenario:'success' as const,...(privacyProof?{privacyProof}:{}),...(proof?{completionProof:proof}:{})}
+   const data={version:states.acquired.version,...(states.acquired.version === 2 ? {questionnaire:'sasang-80' as const} : {}),name:name.trim().normalize('NFC'),phone:phone.replaceAll('-',''),acquired:states.acquired.answers as number[],innate:states.innate.answers as number[],consent:{personal,sensitive,synthetic:false,version:productionPdfConsentVersion},scenario:'success' as const,...(privacyProof?{privacyProof}:{}),...(proof?{completionProof:proof}:{})}
    const signature=JSON.stringify(data);if(request.current.signature!==signature)request.current={id:crypto.randomUUID(),signature}
    submitted=true
    const result=await send({...data,requestId:request.current.id})

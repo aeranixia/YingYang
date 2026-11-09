@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { AdminDownload, AdminPage, AdminQuery, AdminReport } from './admin-contracts'
+import type { AdminDetail } from './admin-contracts'
+import { ReportDetail } from './ReportDetail'
 
-type Props = { list: (query: AdminQuery) => Promise<AdminPage>; download: (id: string) => Promise<AdminDownload> }
+type Props = { detail?: (id: string) => Promise<AdminDetail>; list: (query: AdminQuery) => Promise<AdminPage>; download: (id: string) => Promise<AdminDownload> }
 const labels = {pending:'대기',success:'성공 (API 접수)',failed:'실패'}
 function date(value: number) { return new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',dateStyle:'short',timeStyle:'short'}).format(value) }
 function code(error: unknown) { const value=error&&typeof error==='object'&&'code' in error?error.code:'';return typeof value==='string'&&/^functions\/[a-z-]+$/.test(value)?value:'request-failed' }
-export function AdminReports({list,download}: Props) {
+export function AdminReports({list,download,detail}: Props) {
+ const [selectedDetail,setSelectedDetail]=useState<AdminDetail|null>(null),[detailBusy,setDetailBusy]=useState(false)
+ async function showDetail(id:string){if(!detail)return;setSelectedDetail(null);setDetailBusy(true);try{const result=await detail(id);if(active.current)setSelectedDetail(result)}catch{if(active.current)setMessage('상세 응답이 없거나 7일 보관 기한이 지났습니다. 이전 기록은 기존 PDF를 확인해 주세요.')}finally{if(active.current)setDetailBusy(false)}}
  const [rows,setRows]=useState<AdminReport[]>([]),[cursor,setCursor]=useState<string>(),[query,setQuery]=useState<AdminQuery>({})
  const [busy,setBusy]=useState(false),[message,setMessage]=useState(''),[downloading,setDownloading]=useState('')
  const active=useRef(true),generation=useRef(0),lock=useRef(false)
@@ -45,8 +49,9 @@ export function AdminReports({list,download}: Props) {
   {busy&&<p role="status" className="admin-muted">이력을 불러오고 있습니다…</p>}
   {rows.length>0&&<table className="admin-history"><caption className="admin-sr-only">발송 이력</caption><thead><tr><th scope="col">환자</th><th scope="col">처리 시각</th><th scope="col">상태</th><th scope="col">PDF 보관</th><th scope="col">다운로드</th></tr></thead><tbody>{rows.map(row=>{
    const expired=Date.now()>=row.expiresAt
-   return <tr key={row.id}><th scope="row"><h3>{row.maskedName} ({row.phoneLast4})</h3><span className="admin-muted">{row.mode==='mock'?'모의 처리 · 실제 발송 없음':'Gmail API 접수'}</span></th><td data-label="처리 시각"><time dateTime={new Date(row.updatedAt).toISOString()}>{date(row.updatedAt)}</time></td><td data-label="상태"><span className={'admin-state state-'+row.status}>{row.mode==='mock'&&row.status==='success'?'모의 성공':labels[row.status]}</span>{row.errorCode&&<span className="admin-error-detail">{row.errorCode==='outcome-unknown'?'결과 불명 · 재발송 금지':row.errorCode}</span>}{row.status==='pending'&&<span className="admin-error-detail">처리 중 또는 최종 상태 미확인</span>}</td><td data-label="PDF 보관"><span className={expired?'admin-expired':''}>{expired?'보관 만료':date(row.expiresAt)+'까지'}</span>{!expired&&!row.pdfAvailable&&<span className="admin-error-detail">파일 없음</span>}</td><td><button className="admin-button-secondary" aria-label={row.maskedName+' ('+row.phoneLast4+') '+(row.status==='failed'?'실패 PDF 다운로드':'PDF 다운로드')} disabled={expired||!row.pdfAvailable||!!downloading} onClick={()=>void save(row)}>{expired?'만료됨':downloading===row.id?'다운로드 중…':row.status==='failed'?'실패 PDF 다운로드':'PDF 다운로드'}</button></td></tr>
+   return <tr key={row.id}><th scope="row"><h3>{row.maskedName} ({row.phoneLast4})</h3><span className="admin-muted">{row.mode==='mock'?'모의 처리 · 실제 발송 없음':'Gmail API 접수'}</span><p>{row.questionnaire === 'sasang-80' ? '80문항' : row.questionnaire === 'legacy-50' ? '문항 1.0' : '문항 1.0 · 이전 기록'}</p></th><td data-label="처리 시각"><time dateTime={new Date(row.updatedAt).toISOString()}>{date(row.updatedAt)}</time></td><td data-label="상태"><span className={'admin-state state-'+row.status}>{row.mode==='mock'&&row.status==='success'?'모의 성공':labels[row.status]}</span>{row.errorCode&&<span className="admin-error-detail">{row.errorCode==='outcome-unknown'?'결과 불명 · 재발송 금지':row.errorCode}</span>}{row.status==='pending'&&<span className="admin-error-detail">처리 중 또는 최종 상태 미확인</span>}</td><td data-label="PDF 보관"><span className={expired?'admin-expired':''}>{expired?'보관 만료':date(row.expiresAt)+'까지'}</span>{!expired&&!row.pdfAvailable&&<span className="admin-error-detail">파일 없음</span>}</td><td><button className="admin-button-secondary" aria-label={row.maskedName+' ('+row.phoneLast4+') '+(row.status==='failed'?'실패 PDF 다운로드':'PDF 다운로드')} disabled={expired||!row.pdfAvailable||!!downloading} onClick={()=>void save(row)}>{expired?'만료됨':downloading===row.id?'다운로드 중…':row.status==='failed'?'실패 PDF 다운로드':'PDF 다운로드'}</button>{detail && <button className="admin-button-secondary" disabled={expired || detailBusy} onClick={() => void showDetail(row.id)}>상세 응답·점수</button>}</td></tr>
   })}</tbody></table>}
+  {selectedDetail&&<><button onClick={()=>setSelectedDetail(null)}>상세 닫기</button><ReportDetail detail={selectedDetail}/></>}
   <p className="admin-footnote">API 접수는 수신 확인이 아닙니다. 내려받은 PDF는 관리자 책임으로 관리·삭제해 주세요.</p>
   {cursor&&<button disabled={busy} onClick={()=>void load(true)}>다음 이력 더 보기</button>}
  </div>

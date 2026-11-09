@@ -53,6 +53,7 @@ test('active production prepares a signed ticket only for anonymous consented va
  process.env.PRODUCTION_SEND_ENABLED='true'
  process.env.YINGYANG_MAIL_CONFIG=JSON.stringify({enabled:true,projectId:'yingyangcheck',mode:'production',sender:'synthetic@gmail.com',recipient:'synthetic@naver.com',client_id:'231582543863-synthetic.apps.googleusercontent.com',client_secret:'synthetic',refresh_token:'synthetic'})
  store.set('v1/control/mail',{enabled:true})
+ store.set('questionnaires/settings',{currentEnabled:true,legacyEnabled:true,revision:'virtual'})
  const {randomUUID}=require('node:crypto'),{productionPrivacyVersion,productionPdfConsentVersion}=require('../lib/src/production/contracts')
  const uid='anonymous-active',receipt=await handlers.examStatus.run(wrap({action:'consent-privacy',version:productionPrivacyVersion,personal:true,sensitive:true},uid,'anonymous'))
  assert.equal((await handlers.examStatus.run(wrap({},uid,'anonymous'))).sendEnabled,true)
