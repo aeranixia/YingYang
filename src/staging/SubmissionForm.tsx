@@ -1,3 +1,4 @@
+import { formatPhone, normalizePhone } from '../phone'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { Session } from '../engine'
 import { consentVersion, syntheticNames, syntheticPhones, type MockReceipt, type Submission, type MockScenario } from './contracts'
@@ -18,7 +19,7 @@ export function SubmissionForm({ states, send, confirm, guard }: { states: { acq
  const [scenario, setScenario] = useState<MockScenario>('success')
  const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle'), [message, setMessage] = useState('')
  const request = useRef({ id: '', signature: '' }), locked = useRef(false)
- const valid = states.acquired.completed && states.innate.completed && syntheticNames.some(n => n === name.trim()) && syntheticPhones.some(p => p === phone.replaceAll('-', '')) && personal && sensitive && synthetic
+ const valid = states.acquired.completed && states.innate.completed && syntheticNames.some(n => n === name.trim()) && syntheticPhones.some(p => p === normalizePhone(phone)) && personal && sensitive && synthetic
  async function submit(event: FormEvent) {
   event.preventDefault()
   if (locked.current || status === 'success' || !valid) return
@@ -28,7 +29,7 @@ export function SubmissionForm({ states, send, confirm, guard }: { states: { acq
    if (confirm) await confirmPending(states, confirm)
    const privacyProof = guard?.()
    const proof = completionProof(states)
-   const data = { ...(privacyProof ? { privacyProof } : {}), ...(proof ? { completionProof: proof } : {}), version: states.acquired.version, ...(states.acquired.version === 2 ? { questionnaire: 'sasang-80' as const } : {}), name: name.trim(), phone: phone.replaceAll('-', ''), acquired: states.acquired.answers as number[], innate: states.innate.answers as number[], consent: { personal, sensitive, synthetic, version: consentVersion }, scenario }
+   const data = { ...(privacyProof ? { privacyProof } : {}), ...(proof ? { completionProof: proof } : {}), version: states.acquired.version, ...(states.acquired.version === 2 ? { questionnaire: 'sasang-80' as const } : {}), name: name.trim(), phone: normalizePhone(phone), acquired: states.acquired.answers as number[], innate: states.innate.answers as number[], consent: { personal, sensitive, synthetic, version: consentVersion }, scenario }
    const signature = JSON.stringify(data)
    if (request.current.signature !== signature) request.current = { id: crypto.randomUUID(), signature }
    const result = await send({ ...data, requestId: request.current.id })
@@ -44,7 +45,7 @@ export function SubmissionForm({ states, send, confirm, guard }: { states: { acq
  <form onSubmit={submit} aria-label="모의 결과 전송" aria-busy={status === 'sending'}>
  <fieldset disabled={status === 'sending' || status === 'success'}><legend>가상 정보 입력</legend>
  <label htmlFor="test-name">이름</label><input id="test-name" autoComplete="off" maxLength={30} required value={name} onChange={e => setName(e.target.value)} aria-describedby="test-name-hint"/><p id="test-name-hint">허용된 가상 이름: {syntheticNames.join(', ')}</p>
- <label htmlFor="test-phone">전화번호</label><input id="test-phone" type="tel" inputMode="tel" autoComplete="off" maxLength={13} required value={phone} onChange={e => setPhone(e.target.value)} aria-describedby="test-phone-hint"/><p id="test-phone-hint">허용된 가상 번호: {syntheticPhones.join(', ')} (하이픈 입력 가능)</p>
+ <label htmlFor="test-phone">전화번호</label><input id="test-phone" type="tel" inputMode="tel" autoComplete="off" maxLength={13} required value={phone} onChange={e => setPhone(e.target.value)} onBlur={() => setPhone(formatPhone(phone))} placeholder="010-0000-0000" aria-describedby="test-phone-hint"/><p id="test-phone-hint">허용된 가상 번호: {syntheticPhones.map(formatPhone).join(', ')} (하이픈 입력 가능)</p>
  <div className="consent-copy"><h2>개인정보 수집·이용 동의</h2><p>{pdfPersonal}</p><p>현재는 가상 정보로 처리하며 거부 시 PDF 모의 처리를 이용할 수 없습니다.</p><label className="consent-check"><input type="checkbox" checked={personal} onChange={e => setPersonal(e.target.checked)}/>개인정보 수집·이용에 동의합니다</label></div>
  <div className="consent-copy"><h2>건강 관련 민감정보 처리 동의</h2><p>{pdfSensitive}</p><p>서버 처리 중에 사용하며 거부 시 PDF 모의 처리를 이용할 수 없습니다. 브라우저 검사 응답은 안내된 7일 보관 기준에 따릅니다.</p><label className="consent-check"><input type="checkbox" checked={sensitive} onChange={e => setSensitive(e.target.checked)}/>건강 관련 민감정보 처리에 별도로 동의합니다</label></div>
  <aside className="notice"><h2>결과 전송 안내</h2><p>{pdfDelivery}</p><p>{adminArchiveNotice}</p><p>{mailCopyPolicy}</p><p>현재 화면에서는 모의 처리만 하며 실제 이메일을 보내지 않습니다.</p></aside>

@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { calculate } from './submission'
 import type { Submission } from '../../src/staging/contracts'
 import { createSasangPdf } from './sasang-pdf'
+import { formatPhone } from '../../src/phone'
 
 export function formatCompletion(date: Date | null): string {
  if (!date) return '기록 없음 (이전 완료 데이터)'
@@ -30,7 +31,7 @@ export async function createPdf(input: Submission, completedAt: Date | null, mod
   text(mode === 'production' ? 'YingYang · 검사 결과' : mode === 'mock' ? 'STAGING · 가상 정보 · 모의 처리 전용' : 'STAGING · 가상 정보 · 실제 이메일 테스트', left, 40, 12, width, '#98420e')
   text('체질검사 결과', left, 76, 29, width)
   doc.moveTo(left, 124).lineTo(left + width, 124).strokeColor('#203d34').lineWidth(2).stroke()
-  const details = [['이름', input.name], ['전화번호', input.phone], ['검사 완료 확인 일시 (KST)', formatCompletion(completedAt)]]
+  const details = [['이름', input.name], ['전화번호', formatPhone(input.phone)], ['검사 완료 확인 일시 (KST)', formatCompletion(completedAt)]]
   details.forEach(([label, value], i) => {
    const y = 146 + i * 62
    text(label, left + 16, y, 12, width - 32, '#52635a')

@@ -51,7 +51,7 @@ test('PDF layout has aligned side-by-side tables, large fonts, bounded text and 
   assert.ok(left.height>=20)
   for(const item of items){assert.ok(item.transform[4]>=39,item.str);assert.ok(item.transform[4]+item.width<=page.view[2]-35,item.str);assert.ok(item.transform[5]>=25&&item.transform[5]<=page.view[3]-25,item.str)}
   const text=items.map(x=>x.str).join(' ')
-  assert.ok(text.includes(time?'2026-10-27 00:07':'기록 없음'));for(const value of ['①','②','③','④','10회','80점','테스트환자','01000005678'])assert.ok(text.includes(value),value)
+  assert.ok(text.includes(time?'2026-10-27 00:07':'기록 없음'));for(const value of ['①','②','③','④','10회','80점','테스트환자','010-0000-5678'])assert.ok(text.includes(value),value)
   await load.destroy();bytes.fill(0)
  }
 })

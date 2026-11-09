@@ -35,7 +35,7 @@ test('new PDF is one A4 page with two horizontal score tables and three diamond 
  const bytes=await createPdf(input(),new Date(at),'production'),{getDocument}=await import('pdfjs-dist/legacy/build/pdf.mjs')
  const task=getDocument({data:new Uint8Array(bytes),isEvalSupported:false}),pdf=await task.promise
  try{assert.equal(pdf.numPages,1);const page=await pdf.getPage(1),items=(await page.getTextContent()).items.filter(i=>i.str);const text=items.map(i=>i.str).join(' ')
- for(const value of ['체질검사 결과','선천적 사상체질','후천적 사상페르소나','선천적·후천적 비교','가상테스터','01000001234','2026-11-09 23:59','공동 최고점','합산하지'])assert.ok(text.includes(value),value)
+ for(const value of ['체질검사 결과','선천적 사상체질','후천적 사상페르소나','선천적·후천적 비교','가상테스터','010-0000-1234','2026-11-09 23:59','공동 최고점','합산하지'])assert.ok(text.includes(value),value)
  for(const i of items){assert.ok(i.transform[4]>=0&&i.transform[4]+i.width<=596,i.str);assert.ok(i.transform[5]>=0&&i.transform[5]<=842,i.str)}
  assert.equal(items.filter(i=>i.str==='선천적·후천적 비교').length,1)
  }finally{await task.destroy();bytes.fill(0)}

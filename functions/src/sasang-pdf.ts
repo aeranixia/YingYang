@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { calculate } from './submission'
 import { constitutions, highestScores } from '../../src/questionnaires'
 import type { Submission } from '../../src/staging/contracts'
+import { formatPhone } from '../../src/phone'
 
 export async function createSasangPdf(input: Submission, completed: string, production: boolean): Promise<Buffer> {
  const scores = calculate(input), doc = new PDFDocument({ size: 'A4', margin: 36, font: join(__dirname, '../../../assets/NanumGothic-Regular.ttf'), info: { Title: '체질검사 결과', Author: 'YingYang' } })
@@ -15,7 +16,7 @@ export async function createSasangPdf(input: Submission, completed: string, prod
   text(production ? 'YingYang · 80문항' : 'STAGING · 가상 정보 · 모의 처리', 36, 25, 11)
   text('체질검사 결과', 36, 48, 27)
   text('이름', 36, 94, 11); text(input.name, 36, 112, 20, 250)
-  text('전화번호', 310, 94, 11); text(input.phone, 310, 112, 20, 250)
+  text('전화번호', 310, 94, 11); text(formatPhone(input.phone), 310, 112, 20, 250)
   text('검사 완료 확인 일시 (KST)', 36, 150, 11); text(completed, 36, 168, 16)
   text('문제집: 80문항 · 서버 완료 확인 시각이며 발송 시각과 다릅니다.', 36, 197, 10)
   series.forEach((s, i) => {

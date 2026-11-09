@@ -37,7 +37,7 @@ test('A4 one-page PDF embeds Korean, symbols, dates and both score tables', asyn
  assert.equal(pdf.numPages,1)
  assert.equal((await pdf.getMetadata()).info.Title,'체질검사 결과')
  const page=await pdf.getPage(1), text=(await page.getTextContent({disableNormalization:true})).items.map(x=>x.str).join(' ')
- for(const value of ['가상테스터','01000001234','2026-10-27','후천적 체질','타고난 체질','①','②','③','④','가','나','다','라','10회','80점','체질 판정을 제공하지 않습니다']) assert.ok(text.includes(value),value)
+ for(const value of ['가상테스터','010-0000-1234','2026-10-27','후천적 체질','타고난 체질','①','②','③','④','가','나','다','라','10회','80점','체질 판정을 제공하지 않습니다']) assert.ok(text.includes(value),value)
  assert.ok(Math.abs(page.view[2]-595.28)<1);assert.ok(Math.abs(page.view[3]-841.89)<1)
  await loading.destroy();bytes.fill(0)
 })

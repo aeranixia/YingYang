@@ -8,6 +8,12 @@ beforeEach(()=>localStorage.clear())
 afterEach(()=>{cleanup();vi.restoreAllMocks()})
 function enter(){fireEvent.change(screen.getByLabelText('이름'),{target:{value:'가상테스터'}});fireEvent.change(screen.getByLabelText('전화번호'),{target:{value:'010-0000-1234'}});for(const box of screen.getAllByRole('checkbox'))fireEvent.click(box)}
 const accepted=async(data:Submission):Promise<DeliveryReceipt>=>({status:'gmail-accepted',requestId:data.requestId,duplicate:false})
+it.each(['01000001234','010-0000-1234'])('accepts %s and displays hyphens while submitting unchanged digits',async(value)=>{
+ const send=vi.fn(accepted);render(<ProductionSubmission states={states()} send={send}/>);enter()
+ const phone=screen.getByLabelText('전화번호') as HTMLInputElement
+ fireEvent.change(phone,{target:{value}});fireEvent.blur(phone);expect(phone.value).toBe('010-0000-1234')
+ fireEvent.submit(screen.getByRole('form'));await waitFor(()=>expect(send).toHaveBeenCalledTimes(1));expect(send.mock.calls[0][0].phone).toBe('01000001234')
+})
 it('requires both consents, prevents double submit, clears identity without storing it and distinguishes inbox arrival',async()=>{
  let resolve!:(value:DeliveryReceipt)=>void
  const send=vi.fn<(data:Submission)=>Promise<DeliveryReceipt>>().mockImplementation(()=>new Promise(r=>resolve=r))

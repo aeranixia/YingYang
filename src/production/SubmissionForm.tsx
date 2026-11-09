@@ -1,3 +1,4 @@
+import { formatPhone, normalizePhone } from '../phone'
 import { useRef, useState, type FormEvent } from 'react'
 import type { Session } from '../engine'
 import type { Submission } from '../staging/contracts'
@@ -11,7 +12,7 @@ export function ProductionSubmission({states,send,confirm,guard}:{states:{acquir
  const [name,setName]=useState(''),[phone,setPhone]=useState(''),[personal,setPersonal]=useState(false),[sensitive,setSensitive]=useState(false)
  const [status,setStatus]=useState<'idle'|'sending'|'success'|'error'|'unknown'>('idle'),[message,setMessage]=useState('')
  const locked=useRef(false),request=useRef({id:'',signature:''})
- const valid=states.acquired.completed&&states.innate.completed&&validPatientIdentity(name.trim().normalize('NFC'),phone.replaceAll('-',''))&&personal&&sensitive
+ const valid=states.acquired.completed&&states.innate.completed&&validPatientIdentity(name.trim().normalize('NFC'),normalizePhone(phone))&&personal&&sensitive
  async function submit(event:FormEvent){
   event.preventDefault();if(locked.current||!valid||status==='success'||status==='unknown')return
   locked.current=true;setStatus('sending');setMessage('PDF 작성과 이메일 발송을 진행 중입니다. 화면을 닫지 마세요.')
@@ -19,7 +20,7 @@ export function ProductionSubmission({states,send,confirm,guard}:{states:{acquir
   try{
    guard?.();if(confirm)await confirmPending(states,confirm)
    const privacyProof=guard?.(),proof=completionProof(states)
-   const data={version:states.acquired.version,...(states.acquired.version === 2 ? {questionnaire:'sasang-80' as const} : {}),name:name.trim().normalize('NFC'),phone:phone.replaceAll('-',''),acquired:states.acquired.answers as number[],innate:states.innate.answers as number[],consent:{personal,sensitive,synthetic:false,version:productionPdfConsentVersion},scenario:'success' as const,...(privacyProof?{privacyProof}:{}),...(proof?{completionProof:proof}:{})}
+   const data={version:states.acquired.version,...(states.acquired.version === 2 ? {questionnaire:'sasang-80' as const} : {}),name:name.trim().normalize('NFC'),phone:normalizePhone(phone),acquired:states.acquired.answers as number[],innate:states.innate.answers as number[],consent:{personal,sensitive,synthetic:false,version:productionPdfConsentVersion},scenario:'success' as const,...(privacyProof?{privacyProof}:{}),...(proof?{completionProof:proof}:{})}
    const signature=JSON.stringify(data);if(request.current.signature!==signature)request.current={id:crypto.randomUUID(),signature}
    submitted=true
    const result=await send({...data,requestId:request.current.id})
@@ -33,7 +34,7 @@ export function ProductionSubmission({states,send,confirm,guard}:{states:{acquir
  }
  return <section className="panel submission-panel"><form onSubmit={submit} aria-label="검사 결과 전송" aria-busy={status==='sending'}><fieldset disabled={status==='sending'||status==='success'||status==='unknown'}><legend>결과 전송 정보</legend>
   <label htmlFor="patient-name">이름</label><input id="patient-name" autoComplete="off" maxLength={30} required value={name} onChange={e=>setName(e.target.value)}/>
-  <label htmlFor="patient-phone">전화번호</label><input id="patient-phone" type="tel" inputMode="tel" autoComplete="off" maxLength={13} required value={phone} onChange={e=>setPhone(e.target.value)}/><p>전화번호는 숫자 또는 하이픈으로 입력해 주세요.</p>
+  <label htmlFor="patient-phone">전화번호</label><input id="patient-phone" type="tel" inputMode="tel" autoComplete="off" maxLength={13} required value={phone} onChange={e=>setPhone(e.target.value)} onBlur={()=>setPhone(formatPhone(phone))} placeholder="010-0000-0000"/><p>전화번호는 숫자 또는 하이픈으로 입력해 주세요.</p>
   <div className="consent-copy"><h2>개인정보 수집·이용 동의</h2><p>{pdfPersonal}</p><p>거부할 수 있으며 거부 시 PDF 작성 및 결과 전송은 이용할 수 없습니다.</p><label className="consent-check"><input type="checkbox" checked={personal} onChange={e=>setPersonal(e.target.checked)}/>개인정보 수집·이용에 동의합니다</label></div>
   <div className="consent-copy"><h2>건강 관련 민감정보 처리 동의</h2><p>{pdfSensitive}</p><p>거부할 수 있으며 거부 시 PDF 작성 및 결과 전송은 이용할 수 없습니다.</p><label className="consent-check"><input type="checkbox" checked={sensitive} onChange={e=>setSensitive(e.target.checked)}/>건강 관련 민감정보 처리에 별도로 동의합니다</label></div>
   <aside className="notice"><p>{pdfDelivery}</p><p>{adminArchiveNotice}</p><p>{mailCopyPolicy}</p><p>이름과 전화번호는 브라우저에 영구 저장하지 않습니다. PDF 시각은 서버에서 검사 완료를 확인한 한국 시각이며 발송 시각과 다릅니다.</p></aside>
