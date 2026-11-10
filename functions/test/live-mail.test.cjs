@@ -17,6 +17,14 @@ test('live configuration fails closed outside staging, recipient type, or one-ho
  assert.equal(validateMailConfig(config(),epoch).mode,'gmail-test')
  for(const mutate of [c=>c.projectId='yingyangcheck',c=>c.mode='live',c=>c.recipient='clinic@example.invalid',c=>c.recipient='bad\r\nBcc:a@naver.com',c=>c.sender='bad@example.invalid',c=>c.allowSendUntil='1970-01-01',c=>c.allowSendUntil=new Date(epoch+3600001).toISOString(),c=>c.client_id='invalid']){const c=config();mutate(c);assert.throws(()=>validateMailConfig(c,epoch))}
 })
+
+test('staging permits a server-configured Gmail recipient and keeps envelope injection blocked',async()=>{
+ const cfg={...config(),recipient:'synthetic.receiver@gmail.com'}
+ assert.equal(validateMailConfig(cfg,epoch).recipient,cfg.recipient)
+ const bytes=await composeTestMail(cfg,{filename:'261110_가상테스터_1234.pdf',content:Buffer.from('%PDF-synthetic')},randomUUID())
+ try{const text=bytes.toString();assert.ok(text.includes('To: synthetic.receiver@gmail.com'));assert.ok(!/^Bcc:|^Cc:/mi.test(text))}finally{bytes.fill(0)}
+ for(const recipient of ['a@gmail.com,b@naver.com','a@gmail.com\r\nBcc:b@naver.com','a@other.example'])assert.throws(()=>validateMailConfig({...cfg,recipient},epoch))
+})
 test('tickets reject tamper, expiry, other identity, receiver and payload; no client recipient field accepted',async()=>{
  const cfg=config(),data=input(),r=request(data),service=createLiveService(new Memory(),async()=>{},async()=>'',()=>epoch,pdf)
  for(const bad of [{...r,ticket:r.ticket+'x'},{...r,submission:{...data,phone:'01000005678'}},{...r,recipient:'injected@naver.com'}])await assert.rejects(service(bad,uid,cfg,key),{code:'invalid-argument'})
