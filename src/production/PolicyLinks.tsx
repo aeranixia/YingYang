@@ -1,1 +1,1 @@
-export function PolicyLinks(){return <nav className="public-policy-links" aria-label="서비스 및 개인정보 안내"><a href="/">서비스 소개</a><a href="/privacy" target="_blank" rel="noopener noreferrer">개인정보처리방침</a><a href="/terms" target="_blank" rel="noopener noreferrer">이용약관</a><p>개인정보처리방침이 업데이트되었습니다.</p></nav>}
+export function PolicyLinks(){return <nav className="public-policy-links" aria-label="서비스 및 개인정보 안내"><a href="/">서비스 소개</a><a href="/privacy" target="_blank" rel="noopener noreferrer">개인정보처리방침</a><a href="/terms" target="_blank" rel="noopener noreferrer">이용약관</a></nav>}

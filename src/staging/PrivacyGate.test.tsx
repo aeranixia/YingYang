@@ -75,7 +75,7 @@ it('legacy resume never auto-imports; explicit adoption retains answers and dele
  expect(localStorage.getItem(key('acquired'))).toBe(raw);expect(localStorage.getItem(metadataKey)).toBeNull()
  agree();fireEvent.click(screen.getByRole('button',{name:'이전해 이어하기'}));await screen.findByLabelText('검진 선택')
  expect(localStorage.getItem(key('acquired'))).toBe(raw);expect(JSON.parse(localStorage.getItem(metadataKey)!).exams.acquired.savedAt).toBeGreaterThan(0)
- fireEvent.click(screen.getByRole('button',{name:'검사 데이터 모두 삭제'}));fireEvent.click(screen.getByRole('button',{name:'모두 삭제 확인'}))
+ fireEvent.click(screen.getByText('개인정보 안내 · 검사 데이터 관리'));fireEvent.click(screen.getByRole('button',{name:'검사 데이터 모두 삭제'}));fireEvent.click(screen.getByRole('button',{name:'모두 삭제 확인'}))
  await screen.findByRole('heading',{name:'검사 시작 전 안내와 동의'});expect(localStorage.getItem(privacyKey)).toBeNull();expect(localStorage.getItem(key('acquired'))).toBeNull();expect(localStorage.getItem('yingyang:text-size')).toBe('large')
 })
 it('another-tab deletion during pending consent cannot restore it',async()=>{

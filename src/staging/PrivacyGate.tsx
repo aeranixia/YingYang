@@ -104,13 +104,14 @@ export function PrivacyGate({ authorize, verify, confirm, send, production=false
  const store = useMemo(() => sessionStore(currentEpoch, book), [currentEpoch, revision, book])
  return <div className="privacy-flow" data-text-size={textSize}>
   {!ready&&<div className="privacy-font-settings"><div className="text-settings" role="group" aria-label="글자 크기"><span>글자 크기</span><div className="text-size-buttons">{textSizes.map(size=><button type="button" key={size.value} aria-label={`글자 크기 ${size.label}`} aria-pressed={textSize===size.value} onClick={()=>changeTextSize(size.value)}>{size.label}</button>)}</div></div>{sizeWarning&&<p role="status">{sizeWarning}</p>}</div>}
-  <section className="panel privacy-panel" aria-label="검사 개인정보 보호"><strong>{production?'YingYang · 개인정보 보호':'STAGING · 가상 자료 전용 · 실제 이메일 발송 없음'}</strong>
+  <section className="panel privacy-panel privacy-tools" aria-label="검사 개인정보 보호"><details><summary>개인정보 안내 · 검사 데이터 관리</summary><strong>{production?'YingYang · 개인정보 보호':'STAGING · 가상 자료 전용 · 실제 이메일 발송 없음'}</strong>
    <p>공유 기기에는 검사 응답이 남을 수 있습니다. 로그아웃과 검사 데이터 삭제는 다릅니다.</p>
    <p>{retentionNotice}</p>
    <p>브라우저가 닫혀 있으면 다음 실행 때 만료를 확인하고 삭제합니다.</p>
    <PrivacyPolicy production={production}/>
    <button type="button" className="secondary" onClick={() => setRemoval(true)}>검사 데이터 모두 삭제</button>
    {message && <p role="status">{message}</p>}
+  </details>
   </section>
   {checking ? <p role="status">동의와 임시 저장 상태 확인 중…</p> : ready ? <App bookNavigation={books?.legacyEnabled && <div className="book-tabs">{([['sasang-80', '현재문항'], ['legacy-50', '문항 1.0']] as const).map(([id, label]) => <button key={id} type="button" aria-pressed={book === id} disabled={id === 'sasang-80' && !books.currentEnabled} onClick={() => setSelectedBook(id)}>{label}</button>)}</div>} book={book} onTextSizeChange={setTextSize} edition={production?'v1.3.0':undefined} key={book + revision} sessionStore={store} onSessionsChange={(states, completed) => { assertStates(states, currentEpoch); markCompletion(states, completed); void confirmPending(states, confirm).catch(() => {}) }} submission={states => {const props={states,confirm,guard:() => { assertStates(states, currentEpoch); return requirePrivacy(currentEpoch).proof },send:async (input:Submission) => { assertStates(states, currentEpoch); const result = await send(input); assertStates(states, currentEpoch); return result }};return renderSubmission?renderSubmission(props):<SubmissionForm {...props}/>}}/> : <section className="panel privacy-panel">
    <h1>검사 시작 전 안내와 동의</h1>
