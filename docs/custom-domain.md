@@ -50,3 +50,9 @@ My가비아 → DNS 관리툴 → koreanmbti.com 설정 → 레코드 수정에�
 - 실제 Functions OPTIONS에서 새 기본/www Origin 허용, 유사 악성 도메인 거부 확인. Authentication와 reCAPTCHA의 새 도메인 허용 목록 읽기 검증 성공. App Check 전체 도메인 허용은 사용하지 않는다.
 - Firebase 맞춤 도메인은 HOST_UNREACHABLE/OWNERSHIP_UNREACHABLE, 인증서CERT_PREPARING 상태다. 공개 DNS 조회는 SERVFAIL이며 가비아 DNS 등록과 전파 확인이 남았다. 새 도메인의 실제 HTTPS·Google 관리자 로그인·검진 검수는 미완료다.
 - 사용자에게 가비아의 A/TXT/CNAME 등록값을 안내했다. 실제 메일을 발송하지 않았다.
+
+### 사용자 DNS 등록 후 확인
+
+- 가비아 네임서버와 A `199.36.158.100`, TXT `hosting-site=yingyangcheck`, www CNAME `yingyangcheck.web.app`이 공개 DNS에서 정상 조회된다. 충돌하는 AAAA는 없다.
+- Firebase의 두 도메인은 HOST_ACTIVE, 소유권OWNERSHIP_PENDING, 인증서CERT_PREPARING이다. 추가 DNS 등록 요구는 없으며 초기 DNS_SERVFAIL 표식이 남아 있어 Firebase 측 전파/재검증을 기다린다.
+- 실제 HTTPS는 아직 ERR_TLS_CERT_ALTNAME_INVALID다. 인증서 검증을 끄지 않았으며 HTTPS 연결 완료나 실제 새 도메인 로그인 검수 완료로 표시하지 않는다. 기존 Firebase 주소는 정상이다.
