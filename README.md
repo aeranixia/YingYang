@@ -8,6 +8,9 @@ YingYang은 **후천적 체질 검진**과 **타고난 체질 검진**을 제공
 
 - **서비스:** https://yingyangcheck.web.app
 - **관리자 페이지:** https://yingyangcheck.web.app/admin
+- **새 기본 주소:** https://koreanmbti.com (HTTPS 인증서 발급 대기)
+- **새 관리자 주소:** https://koreanmbti.com/admin
+- **도메인 전환:** [연결 상태](docs/custom-domain.md) · [Google 심사 보완 설정·회신 초안](docs/google-oauth-domain-update.md)
 - **버전:** v1.3.0 (운영 전환 검증 중)
 
 ## 이용 안내
