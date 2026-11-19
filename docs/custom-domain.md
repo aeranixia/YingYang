@@ -56,3 +56,9 @@ My가비아 → DNS 관리툴 → koreanmbti.com 설정 → 레코드 수정에�
 - 가비아 네임서버와 A `199.36.158.100`, TXT `hosting-site=yingyangcheck`, www CNAME `yingyangcheck.web.app`이 공개 DNS에서 정상 조회된다. 충돌하는 AAAA는 없다.
 - Firebase의 두 도메인은 HOST_ACTIVE, 소유권OWNERSHIP_PENDING, 인증서CERT_PREPARING이다. 추가 DNS 등록 요구는 없으며 초기 DNS_SERVFAIL 표식이 남아 있어 Firebase 측 전파/재검증을 기다린다.
 - 실제 HTTPS는 아직 ERR_TLS_CERT_ALTNAME_INVALID다. 인증서 검증을 끄지 않았으며 HTTPS 연결 완료나 실제 새 도메인 로그인 검수 완료로 표시하지 않는다. 기존 Firebase 주소는 정상이다.
+
+### Google Search Console 확인
+
+- 사용자가 koreanmbti.com 도메인 속성의 ‘소유권이 확인됨’ 결과를 확인했다. Google 확인용 TXT와 Firebase hosting-site TXT가 공개 DNS에 함께 유지됨을 별도 확인했다. 확인용 TXT는 삭제하지 않는다.
+- Firebase도 루트/www 모두 OWNERSHIP_ACTIVE, HOST_ACTIVE로 변경됐다. 인증서는 아직 CERT_PREPARING이고 실제 HTTPS는 인증서 이름 오류이므로 새 주소의 접속 완료로 보고하지 않는다.
+- OAuth 브랜딩의 홈페이지/개인정보처리방침/이용약관 URL 변경은 새 주소의 HTTPS 정상화 후 진행한다. 기존 OAuth 인증이나 게시 상태를 임의로 변경하지 않았다.
