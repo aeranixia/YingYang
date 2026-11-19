@@ -41,3 +41,12 @@ My가비아 → DNS 관리툴 → koreanmbti.com 설정 → 레코드 수정에�
 - DNS 등록·전파·인증서 발급 및 새 도메인 실제 로그인 검수는 진행 결과에 따라 기록한다. 등록만으로 연결 완료로 보고하지 않는다.
 
 공식 안내: [Firebase 맞춤 도메인](https://firebase.google.com/docs/hosting/custom-domain), [가비아 DNS 관리](https://customer.gabia.com/faq/detail/2929/2932).
+
+### 배포 확인 — 2026-11-20
+
+- 소스 커밋 `57284a1`, main 푸시 및 운영 Hosting/Functions8개 배포 성공.
+- 테스트180개(UI87/정책9/서버84)와 운영/Functions 빌드 통과.
+- 기존 운영 서비스·검사·관리자 경로HTTP200, 실제 운영 HTML 빌드 일치, Functions8개ACTIVE 확인.
+- 실제 Functions OPTIONS에서 새 기본/www Origin 허용, 유사 악성 도메인 거부 확인. Authentication와 reCAPTCHA의 새 도메인 허용 목록 읽기 검증 성공. App Check 전체 도메인 허용은 사용하지 않는다.
+- Firebase 맞춤 도메인은 HOST_UNREACHABLE/OWNERSHIP_UNREACHABLE, 인증서CERT_PREPARING 상태다. 공개 DNS 조회는 SERVFAIL이며 가비아 DNS 등록과 전파 확인이 남았다. 새 도메인의 실제 HTTPS·Google 관리자 로그인·검진 검수는 미완료다.
+- 사용자에게 가비아의 A/TXT/CNAME 등록값을 안내했다. 실제 메일을 발송하지 않았다.
