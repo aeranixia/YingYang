@@ -1,5 +1,6 @@
 import { readBooks, requireBook, manageBooks } from './book-policy'
 import { productionPrivacyVersion } from '../../src/production/contracts'
+import { productionOrigins } from '../../src/production/domains'
 import { onCall, HttpsError, type CallableOptions, type CallableRequest } from 'firebase-functions/v2/https'
 import { defineSecret } from 'firebase-functions/params'
 import { initializeApp, getApps } from 'firebase-admin/app'
@@ -19,7 +20,7 @@ import { activeProductionMail, productionAccess, productionDispatch, productionP
 const project='yingyangcheck'
 const signingKey=defineSecret('YINGYANG_SIGNING_KEY')
 const mailConfig=defineSecret('YINGYANG_MAIL_CONFIG')
-const options:CallableOptions={region:'asia-northeast3',serviceAccount:'231582543863-compute@developer.gserviceaccount.com',minInstances:0,maxInstances:1,concurrency:1,memory:'512MiB',cpu:1,timeoutSeconds:30,enforceAppCheck:true,cors:['https://yingyangcheck.web.app','https://yingyangcheck.firebaseapp.com'],secrets:[signingKey,mailConfig]}
+const options:CallableOptions={region:'asia-northeast3',serviceAccount:'231582543863-compute@developer.gserviceaccount.com',minInstances:0,maxInstances:1,concurrency:1,memory:'512MiB',cpu:1,timeoutSeconds:30,enforceAppCheck:true,cors:productionOrigins,secrets:[signingKey,mailConfig]}
 const auth=getAuth(getApps()[0]||initializeApp({projectId:project}))
 const archive=new ReportArchive(new GcsArchiveStore('yingyangcheck-admin-reports-231582543863',undefined,project),Date.now,project)
 const mailState=new GcsStateStore('yingyangcheck-mail-state-231582543863')

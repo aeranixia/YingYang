@@ -11,13 +11,14 @@ import { clinicName, privacyContact, privacyDepartment, pdfPersonal, pdfSensitiv
 import { privacyVersion, type PrivacyReceipt } from '../staging/privacy-storage'
 import type { Submission, MockReceipt } from '../staging/contracts'
 import config from './public-config'
+import { isProductionHost } from './domains'
 import { ProductionSubmission, type DeliveryReceipt } from './SubmissionForm'
 import { PolicyLinks } from './PolicyLinks'
 import '../style.css'
 import '../staging/staging.css'
 import '../staging/exam.css'
 
-if(config.projectId!=='yingyangcheck'||location.hostname!=='yingyangcheck.web.app'&&location.hostname!=='yingyangcheck.firebaseapp.com'&&location.hostname!=='127.0.0.1')throw Error('운영 환경 설정을 확인해 주세요.')
+if(config.projectId!=='yingyangcheck'||!isProductionHost(location.hostname)&&location.hostname!=='127.0.0.1')throw Error('운영 환경 설정을 확인해 주세요.')
 const admin=location.pathname==='/admin'
 const app=initializeApp(config)
 const auth=initializeAuth(app,{persistence:admin?inMemoryPersistence:browserLocalPersistence,popupRedirectResolver:browserPopupRedirectResolver})
